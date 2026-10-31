@@ -51,6 +51,13 @@
   #mute{position:fixed;top:14px;left:50%;transform:translateX(-50%);z-index:11;pointer-events:auto;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.2);color:#fff;font-family:inherit;font-size:9px;letter-spacing:3px;padding:6px 12px;border-radius:20px;cursor:pointer}
   .flash{position:fixed;inset:0;z-index:4;pointer-events:none;background:radial-gradient(circle,rgba(255,255,255,.0),rgba(255,60,120,.0));opacity:0;transition:opacity .4s}
   .flash.go{opacity:1;background:radial-gradient(circle,rgba(255,240,220,.85),rgba(255,40,90,.4));transition:none}
+  .bossbar{position:absolute;left:50%;top:52px;transform:translateX(-50%);width:min(64vw,440px);text-align:center;opacity:0;transition:opacity .4s}
+  .bossbar.on{opacity:1}
+  .bname{font-size:11px;letter-spacing:4px;color:#ff9fc0;text-shadow:0 0 10px #ff2b6a;margin-bottom:6px;font-weight:700}
+  .btrack{height:10px;border-radius:6px;border:1px solid rgba(255,43,106,.6);background:rgba(255,255,255,.06);overflow:hidden;box-shadow:0 0 16px rgba(255,43,106,.4)}
+  .btrack i{display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff2b6a,#ff7ae6);transform-origin:left;transition:transform .2s}
+  .bossbar.rage .btrack i{background:linear-gradient(90deg,#ff1a1a,#ffc94a)}
+  .bosses{margin-top:6px;font-size:11px;letter-spacing:4px;color:#ff9fc0;height:14px}
   #loading{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;background:#05020c;font-size:12px;letter-spacing:6px;color:var(--cyan);transition:opacity .6s}
 </style>
 <script type="importmap">
@@ -65,6 +72,7 @@
 <div class="hud" id="hud">
   <div class="tl"><div class="lbl">SCORE</div><div class="val" id="score">0</div><div class="mult" id="mult"></div></div>
   <div class="tr"><div class="lbl">BEST</div><div class="val small" id="best">0</div><div class="lbl" style="margin-top:8px">DIST</div><div class="val small" id="dist">0.0 KM</div></div>
+  <div class="bossbar" id="bossBar"><div class="bname" id="bossName">THE WARDEN</div><div class="btrack"><i id="bossFill"></i></div></div>
   <div class="hint l">‹</div><div class="hint r">›</div>
   <div class="nlabel">NITRO</div>
   <div class="nitrobar"><i id="nitroFill"></i></div>
@@ -95,6 +103,7 @@
     <div><div class="lbl">TOP SPEED</div><div class="val" id="oTop">0</div></div>
   </div>
   <div class="newbest" id="newBest"></div>
+  <div class="bosses" id="oBosses"></div>
   <button class="btn" id="againBtn">RIDE AGAIN</button>
 </div>
 <button id="mute">SOUND ON</button>
@@ -111,8 +120,8 @@ import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 const isTouch = matchMedia('(pointer:coarse)').matches || 'ontouchstart' in window;
 if (isTouch) document.body.classList.add('touch');
 document.getElementById('ctrlTxt').innerHTML = isTouch
-  ? 'HOLD <b>LEFT / RIGHT</b> SIDE TO STEER<br>HOLD <b>NITRO</b> TO BOOST · DODGE TRAFFIC · GRAB ORBS'
-  : '<b>← →</b> / <b>A D</b> STEER · <b>↑</b> THROTTLE · <b>↓</b> BRAKE<br><b>SPACE / SHIFT</b> NITRO · DODGE TRAFFIC · GRAB ORBS';
+  ? 'HOLD <b>LEFT / RIGHT</b> SIDE TO STEER<br>HOLD <b>NITRO</b> TO BOOST · DODGE TRAFFIC · GRAB ORBS<br>EVERY FEW KM: <b>BEAT THE WARDEN</b> — GRAB BLUE CHARGES TO HIT IT'
+  : '<b>← →</b> / <b>A D</b> STEER · <b>↑</b> THROTTLE · <b>↓</b> BRAKE<br><b>SPACE / SHIFT</b> NITRO · DODGE TRAFFIC · GRAB ORBS<br>EVERY FEW KM: <b>BEAT THE WARDEN</b> — GRAB BLUE CHARGES TO HIT IT';
 
 // ---------- seeded random ----------
 let _seed = 1337;
@@ -524,6 +533,219 @@ for (let i = 0; i < 14; i++) {
   orbs.push({ g, ring: r, active: false });
 }
 
+// ---------- boss: THE WARDEN ----------
+// An armored hover-tank that holds position ahead of the bike. It fires telegraphed
+// lane lasers, drops rolling mines, and sheds EMP charges: grab a charge to fire it back.
+const BOSS = { firstAt: 2000, every: 3000, z: -27, scale: 1.75, baseHp: 8, hpPerLevel: 2, bonus: 5000, hitScore: 300, laserWarn: 1.15, laserFire: 0.55 };
+const boss = { phase: 'none', level: 0, z: -320, x: 0, tx: 0, hp: 0, maxHp: 0, laneT: 0, atkT: 0, orbT: 0, flash: 0, introT: 0, deathT: 0, sirenT: 0 };
+const bossG = new THREE.Group(); bossG.visible = false; bossG.scale.setScalar(BOSS.scale); scene.add(bossG);
+const BOSS_REAR = 4 * BOSS.scale;   // distance from the Warden's centre to its rear face
+const bossPaint = new THREE.MeshPhysicalMaterial({ color: 0x15111d, metalness: 0.9, roughness: 0.28, clearcoat: 1, clearcoatRoughness: 0.1, emissive: new THREE.Color(0xff2b6a), emissiveIntensity: 0, envMapIntensity: 1.4 });
+const bossDark = new THREE.MeshStandardMaterial({ color: 0x0a090f, metalness: 0.8, roughness: 0.4 });
+const bossEyeM = new THREE.MeshBasicMaterial({ color: hdr(0xff1a4a, 8) });
+{
+  add(bossG, new THREE.BoxGeometry(6.2, 1.7, 8), bossPaint, 0, 1.75, 0);                       // hull
+  add(bossG, new THREE.BoxGeometry(4.4, 1.1, 5.4), bossPaint, 0, 3.15, 0.3);                    // deck
+  add(bossG, new THREE.BoxGeometry(6.6, 0.5, 3.2), bossDark, 0, 1.0, -2.2);                     // front skirt
+  add(bossG, new THREE.CylinderGeometry(0.95, 1.15, 0.8, 18), bossDark, 0, 4.1, 1.1);           // turret
+  add(bossG, new THREE.BoxGeometry(0.42, 0.42, 2.8), bossDark, 0, 4.15, 2.6);                   // cannon (faces the rider)
+  add(bossG, new THREE.CircleGeometry(0.2, 16), bossEyeM, 0, 4.15, 4.01);                        // muzzle
+  add(bossG, new THREE.BoxGeometry(4.8, 0.32, 0.1), bossEyeM, 0, 2.05, 4.02);                   // rear "eye" bar
+  for (const s of [-1, 1]) {
+    add(bossG, new THREE.BoxGeometry(0.08, 0.12, 8.05), new THREE.MeshBasicMaterial({ color: hdr(0xff2bd6, 5) }), s * 3.12, 2.45, 0);
+    add(bossG, new THREE.BoxGeometry(0.08, 0.1, 8.05), new THREE.MeshBasicMaterial({ color: hdr(0x2ff3ff, 4) }), s * 3.12, 1.05, 0);
+    const pod = add(bossG, new THREE.CylinderGeometry(0.55, 0.65, 2.4, 16), bossPaint, s * 3.55, 1.4, 1.2, Math.PI / 2);
+    add(bossG, new THREE.CircleGeometry(0.48, 18), new THREE.MeshBasicMaterial({ color: hdr(0x2ff3ff, 7) }), s * 3.55, 1.4, 2.42);
+    pod.castShadow = false;
+  }
+  const eyeGlow = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: hdr(0xff1a4a, 2.4), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  eyeGlow.scale.set(9, 3.2, 1); eyeGlow.position.set(0, 2.1, 4.3); bossG.add(eyeGlow);
+  for (const y of [3.72, 0.92]) add(bossG, new THREE.BoxGeometry(6.3, 0.07, 0.07), new THREE.MeshBasicMaterial({ color: hdr(0xff2bd6, 6) }), 0, y, 4.0);
+  const ug = new THREE.Mesh(new THREE.PlaneGeometry(9, 12), additive({ color: hdr(0xff2b6a, 0.9) }));
+  ug.rotation.x = -Math.PI / 2; ug.position.y = 0.05; bossG.add(ug);
+}
+// lane lasers: a flashing warning strip, then a beam
+const BEAM_LEN = 46, BEAM_Z = -9;
+const beamGlowTex = canvasTex(64, 8, (g, w, h) => { const gr = g.createLinearGradient(0, 0, w, 0); gr.addColorStop(0, 'rgba(255,255,255,0)'); gr.addColorStop(.5, 'rgba(255,255,255,1)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); g.fillStyle = gr; g.fillRect(0, 0, w, h); }, false);
+const beams = [0, 1].map(() => {
+  const warn = new THREE.Mesh(new THREE.PlaneGeometry(3.4, BEAM_LEN), new THREE.MeshBasicMaterial({ color: hdr(0xff1a3a, 0.9), transparent: true, opacity: 0, depthWrite: false, blending: THREE.AdditiveBlending }));
+  warn.rotation.x = -Math.PI / 2; warn.position.set(0, 0.04, BEAM_Z);
+  const core = new THREE.Mesh(new THREE.BoxGeometry(0.32, 0.32, BEAM_LEN), new THREE.MeshBasicMaterial({ color: hdr(0xff4070, 10) }));
+  core.position.set(0, 1.0, BEAM_Z);
+  const glow = new THREE.Mesh(new THREE.PlaneGeometry(3.6, BEAM_LEN), additive({ map: beamGlowTex, color: hdr(0xff2050, 1.4) }));
+  glow.rotation.x = -Math.PI / 2; glow.position.set(0, 0.06, BEAM_Z);
+  warn.visible = core.visible = glow.visible = false;
+  scene.add(warn, core, glow);
+  return { warn, core, glow, state: 'off', t: 0, lane: 0 };
+});
+// mines (deadly) and EMP charges (ammo) — both drop from the Warden and roll back toward the bike
+const mineMat = new THREE.MeshStandardMaterial({ color: 0x1a0a10, emissive: hdr(0xff2040, 2.2), metalness: 0.8, roughness: 0.3, flatShading: true });
+const drops = [];
+function makeDrop(kind) {
+  const g = new THREE.Group();
+  const mine = kind === 'mine';
+  const core = new THREE.Mesh(mine ? new THREE.IcosahedronGeometry(0.62, 0) : new THREE.OctahedronGeometry(0.45, 0), mine ? mineMat : new THREE.MeshStandardMaterial({ color: 0x0a1a20, emissive: hdr(0x2ff3ff, 3.2), metalness: 1, roughness: 0.2, flatShading: true }));
+  g.add(core);
+  if (mine) for (let k = 0; k < 6; k++) { const sp = new THREE.Mesh(new THREE.ConeGeometry(0.12, 0.5, 6), mineMat); const a = [[1, 0, 0], [-1, 0, 0], [0, 1, 0], [0, -1, 0], [0, 0, 1], [0, 0, -1]][k]; sp.position.set(a[0] * .62, a[1] * .62, a[2] * .62); sp.lookAt(a[0] * 2, a[1] * 2, a[2] * 2); sp.rotateX(Math.PI / 2); core.add(sp); }
+  const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: mine ? hdr(0xff2040, 1.8) : hdr(0x2ff3ff, 1.8), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true }));
+  s.scale.setScalar(mine ? 3.2 : 3); g.add(s);
+  const ring = new THREE.Mesh(new THREE.TorusGeometry(0.75, 0.035, 6, 32), new THREE.MeshBasicMaterial({ color: mine ? hdr(0xff2040, 4) : hdr(0x2ff3ff, 4) }));
+  g.add(ring);
+  g.visible = false; scene.add(g);
+  const d = { g, core, ring, kind, active: false, vz: 0, lane: 0 }; drops.push(d); return d;
+}
+for (let i = 0; i < 10; i++) makeDrop('mine');
+for (let i = 0; i < 6; i++) makeDrop('charge');
+// EMP shots flying from the bike to the Warden
+const shots = [];
+for (let i = 0; i < 6; i++) { const s = new THREE.Sprite(new THREE.SpriteMaterial({ map: glowTex, color: hdr(0x9ffcff, 3), blending: THREE.AdditiveBlending, depthWrite: false, transparent: true })); s.scale.setScalar(2.2); s.visible = false; scene.add(s); shots.push({ s, t: -1, from: new THREE.Vector3() }); }
+
+const bossLevelName = () => `THE WARDEN · MK-${boss.level + 1}`;
+function bossClear() {
+  boss.phase = 'none'; bossG.visible = false; boss.z = -320;
+  for (const b of beams) { b.state = 'off'; b.warn.visible = b.core.visible = b.glow.visible = false; }
+  for (const d of drops) { d.active = false; d.g.visible = false; }
+  for (const s of shots) { s.t = -1; s.s.visible = false; }
+  document.getElementById('bossBar').classList.remove('on');
+}
+function bossStart() {
+  boss.phase = 'enter'; boss.introT = 0; boss.z = -320; boss.x = 0; boss.tx = 0;
+  boss.maxHp = boss.hp = BOSS.baseHp + boss.level * BOSS.hpPerLevel;
+  boss.atkT = 2.2; boss.orbT = 1.2; boss.laneT = 1;
+  bossG.visible = true; bossG.position.set(0, 0, boss.z);
+  document.getElementById('bossName').textContent = bossLevelName();
+  document.getElementById('bossBar').classList.add('on');
+  popup('⚠ BOSS INCOMING', '#ff2b6a'); boss.sirenT = 0;
+}
+function dropFrom(kind, lane) {
+  const d = drops.find(x => x.kind === kind && !x.active); if (!d) return;
+  d.active = true; d.g.visible = true; d.lane = lane; d.vz = 0;
+  d.g.position.set(LANES[lane], kind === 'mine' ? 0.75 : 1.0, boss.z + BOSS_REAR + 0.5);
+}
+function nearestLane(x) { let b = 0; for (let i = 1; i < 4; i++) if (Math.abs(LANES[i] - x) < Math.abs(LANES[b] - x)) b = i; return b; }
+function fireLaser(lane) {
+  const b = beams.find(x => x.state === 'off'); if (!b) return;
+  b.state = 'warn'; b.t = 0; b.lane = lane;
+  for (const m of [b.warn, b.core, b.glow]) m.position.x = LANES[lane];
+  b.warn.visible = true;
+  blip(300, BOSS.laserWarn * 0.9, 'sawtooth', 0.07, 4);
+}
+function bossHit() {
+  boss.hp--; boss.flash = 1; state.shake = Math.max(state.shake, 0.3);
+  state.score += BOSS.hitScore * (boss.level + 1);
+  noiseHit(0.35, 1400, 0.4); blip(160, 0.3, 'square', 0.15, 0.5);
+  for (let i = 0; i < 40; i++) emit(boss.x + R(-2.5, 2.5), R(1, 4.5), boss.z + BOSS_REAR, R(-6, 6), R(0, 6), R(-2, 6), R(0.3, 0.8), R(0.2, 0.5), 0.6, 2.6, 3, 8, 0);
+  if (boss.hp <= 0) { boss.phase = 'dying'; boss.deathT = 0; for (const b of beams) { b.state = 'off'; b.warn.visible = b.core.visible = b.glow.visible = false; } }
+  else popup(`DIRECT HIT · ${boss.hp} LEFT`, '#2ff3ff');
+}
+function updateBoss(dt) {
+  const st = state;
+  const playing = st.mode === 'play';
+  if (boss.phase === 'none') {
+    if (playing && st.dist > st.nextBoss) bossStart();
+    return;
+  }
+  const enraged = boss.hp <= boss.maxHp / 2;
+  const tempo = (enraged ? 0.72 : 1) * Math.max(0.6, 1 - boss.level * 0.08);
+  // movement
+  if (!playing && boss.phase !== 'dying') { boss.z -= 30 * dt; if (boss.z < -340) bossClear(); }
+  else if (boss.phase === 'enter') {
+    boss.z = Math.min(BOSS.z, boss.z + Math.max(10, (BOSS.z - boss.z) * 1.7) * dt);  // fast swoop in, then settle
+    boss.sirenT -= dt; if (boss.sirenT <= 0) { boss.sirenT = 0.55; blip(boss.introT % 1.1 < 0.55 ? 520 : 390, 0.4, 'square', 0.06, 1); }
+    boss.introT += dt;
+    if (Math.abs(boss.z - BOSS.z) < 1.5) { boss.phase = 'fight'; popup('GRAB THE BLUE CHARGES', '#2ff3ff'); }
+  } else if (boss.phase === 'fight') {
+    boss.z = damp(boss.z, BOSS.z, 2, dt);
+    boss.laneT -= dt; if (boss.laneT <= 0) { boss.laneT = R(1.4, 2.4) * tempo; boss.tx = LANES[(Math.random() * 4) | 0]; }
+    boss.atkT -= dt;
+    if (boss.atkT <= 0 && playing) {
+      if (Math.random() < 0.55) {
+        const lane = nearestLane(st.x); fireLaser(lane); boss.tx = LANES[lane];
+        if (enraged && Math.random() < 0.5) { let l2; do { l2 = (Math.random() * 4) | 0; } while (l2 === lane); fireLaser(l2); }
+      } else {
+        const n = enraged ? 2 : 1 + (Math.random() < 0.4 ? 1 : 0);
+        const lanes = [0, 1, 2, 3].sort(() => Math.random() - 0.5).slice(0, n);
+        lanes.forEach((l, i) => setTimeout(() => { if (boss.phase === 'fight') dropFrom('mine', l); }, i * 220));
+        blip(140, 0.2, 'square', 0.1, 0.6);
+      }
+      boss.atkT = R(2.0, 2.8) * tempo;
+    }
+    boss.orbT -= dt;
+    if (boss.orbT <= 0 && playing) {
+      const hot = beams.filter(b => b.state !== 'off').map(b => b.lane);
+      const free = [0, 1, 2, 3].filter(l => !hot.includes(l));
+      dropFrom('charge', free[(Math.random() * free.length) | 0]);
+      boss.orbT = R(1.7, 2.3) * (enraged ? 0.85 : 1);
+    }
+  } else if (boss.phase === 'dying') {
+    boss.deathT += dt;
+    if (Math.random() < 0.6) { noiseHit(0.5, 600, 0.25); for (let i = 0; i < 18; i++) emit(boss.x + R(-3, 3), R(0.5, 4), boss.z + R(-4, 4), R(-8, 8), R(2, 10), R(-8, 8), R(0.4, 1.2), R(0.3, 0.8), 3, R(0.6, 1.8), 0.4, 10, 0); }
+    bossG.rotation.z = Math.sin(boss.deathT * 30) * 0.05; bossG.position.y = -boss.deathT * 0.6;
+    if (boss.deathT > 1.6) {
+      const bonus = BOSS.bonus * (boss.level + 1);
+      st.score += bonus; st.nitro = 1; st.bosses = (st.bosses || 0) + 1;
+      for (let i = 0; i < 220; i++) { const a = R(0, 6.28), u = R(-1, 1), sp = R(6, 26); emit(boss.x, 2, boss.z, Math.cos(a) * sp * Math.sqrt(1 - u * u), Math.abs(u) * sp, Math.sin(a) * sp * Math.sqrt(1 - u * u), R(0.6, 1.8), R(0.4, 1.1), 3, R(0.8, 2), R(0.3, 2.5), 6, 0); }
+      noiseHit(1.6, 900, 0.9); blip(110, 1.2, 'sawtooth', 0.3, 0.3);
+      const f = document.getElementById('flash'); f.classList.add('go'); setTimeout(() => f.classList.remove('go'), 60);
+      popup(`WARDEN DESTROYED +${bonus.toLocaleString()}`, '#ffc94a');
+      boss.level++; st.nextBoss = st.dist + BOSS.every; st.nextCar = st.dist + 40;
+      bossG.rotation.z = 0; bossG.position.y = 0; bossClear();
+      return;
+    }
+  }
+  boss.x = damp(boss.x, boss.tx, 2.6, dt);
+  bossG.position.set(boss.x, boss.phase === 'dying' ? bossG.position.y : 0.35 + Math.sin(st.time * 3) * 0.12, boss.z);
+  bossG.rotation.z = boss.phase === 'dying' ? bossG.rotation.z : (boss.tx - boss.x) * -0.03;
+  boss.flash = Math.max(0, boss.flash - dt * 4); bossPaint.emissiveIntensity = boss.flash * 3;
+  bossEyeM.color.copy(hdr(0xff1a4a, 6 + Math.sin(st.time * (enraged ? 14 : 6)) * 3));
+
+  // lasers
+  for (const b of beams) {
+    if (b.state === 'off') continue;
+    b.t += dt;
+    for (const m of [b.warn, b.core, b.glow]) m.position.z = BEAM_Z + (boss.z - BOSS.z);
+    if (b.state === 'warn') {
+      const warnT = BOSS.laserWarn * (enraged ? 0.82 : 1);
+      b.warn.material.opacity = 0.25 + 0.45 * (0.5 + 0.5 * Math.sin(b.t * 28));
+      if (b.t >= warnT) { b.state = 'fire'; b.t = 0; b.warn.visible = false; b.core.visible = b.glow.visible = true; noiseHit(0.55, 2200, 0.35); state.shake = Math.max(state.shake, 0.25); }
+    } else if (b.state === 'fire') {
+      b.core.scale.set(1 + Math.sin(b.t * 60) * 0.25, 1 + Math.sin(b.t * 60) * 0.25, 1);
+      if (playing && Math.abs(st.x - LANES[b.lane]) < 1.65) { crash(null); popup('LASERED', '#ff2b6a'); }
+      if (b.t >= BOSS.laserFire) { b.state = 'off'; b.core.visible = b.glow.visible = false; }
+    }
+  }
+  // drops
+  for (const d of drops) {
+    if (!d.active) continue;
+    d.vz = Math.min(st.speed * 0.9, d.vz + 24 * dt);
+    d.g.position.z += d.vz * dt;
+    d.core.rotation.x += dt * 2; d.core.rotation.y += dt * 3;
+    d.ring.rotation.x = st.time * 2; d.ring.rotation.y = st.time * 1.4;
+    if (d.g.position.z > 15) { d.active = false; d.g.visible = false; continue; }
+    if (!playing) continue;
+    const dx = Math.abs(d.g.position.x - st.x), dz = Math.abs(d.g.position.z);
+    if (d.kind === 'mine' && dx < 1.35 && dz < 1.3) {
+      d.active = false; d.g.visible = false; crash(null); popup('MINED', '#ff2b6a');
+    } else if (d.kind === 'charge' && dx < 1.5 && dz < 1.6) {
+      d.active = false; d.g.visible = false;
+      blip(700, 0.12, 'triangle', 0.18, 2.2);
+      const s = shots.find(x => x.t < 0); if (s) { s.t = 0; s.from.set(st.x, 1.1, 0); s.s.visible = true; }
+    }
+  }
+  // EMP shots
+  for (const s of shots) {
+    if (s.t < 0) continue;
+    s.t += dt / 0.32;
+    const k = Math.min(s.t, 1);
+    s.s.position.set(lerp(s.from.x, boss.x, k), lerp(s.from.y, 3.4, k) + Math.sin(k * Math.PI) * 2.2, lerp(s.from.z, boss.z + BOSS_REAR, k));
+    emit(s.s.position.x, s.s.position.y, s.s.position.z, R(-1, 1), R(-1, 1), R(-1, 1), 0.25, 0.25, 0.6, 2.4, 3, 0, 0);
+    if (s.t >= 1) { s.t = -1; s.s.visible = false; if (boss.phase === 'fight' || boss.phase === 'enter') bossHit(); }
+  }
+  // HUD
+  document.getElementById('bossFill').style.transform = `scaleX(${Math.max(0, boss.hp / boss.maxHp)})`;
+  document.getElementById('bossBar').classList.toggle('rage', enraged);
+}
+
 // ---------- particles ----------
 const PN = 1400;
 const pPos = new Float32Array(PN * 3), pCol = new Float32Array(PN * 4), pSize = new Float32Array(PN);
@@ -682,7 +904,7 @@ addEventListener('pointerup', tEnd); addEventListener('pointercancel', tEnd);
 
 // ---------- game state ----------
 let best = 0; try { best = +localStorage.getItem('neonrider_best') || 0; } catch (e) { }
-const state = { mode: 'menu', speed: 26, x: 0, vx: 0, lean: 0, travel: 0, dist: 0, score: 0, nitro: 1, nitroOn: false, nextCar: 60, nextOrb: 40, time: 0, crashT: 0, shake: 0, top: 0, combo: 1, comboT: 0, tumble: new THREE.Vector3(), bikeVel: new THREE.Vector3() };
+const state = { mode: 'menu', speed: 26, x: 0, vx: 0, lean: 0, travel: 0, dist: 0, score: 0, nitro: 1, nitroOn: false, nextCar: 60, nextOrb: 40, nextBoss: BOSS.firstAt, bosses: 0, time: 0, crashT: 0, shake: 0, top: 0, combo: 1, comboT: 0, tumble: new THREE.Vector3(), bikeVel: new THREE.Vector3() };
 const $ = id => document.getElementById(id);
 const hud = $('hud'), elScore = $('score'), elBest = $('best'), elDist = $('dist'), elSpd = $('spd'), elArc = $('arc'), elNitro = $('nitroFill'), elMult = $('mult');
 elBest.textContent = best.toLocaleString();
@@ -696,9 +918,10 @@ function popup(text, color) {
 function resetWorld() {
   cars.forEach(c => { c.active = false; c.g.visible = false; });
   orbs.forEach(o => { o.active = false; o.g.visible = false; });
-  Object.assign(state, { speed: 26, x: 0, vx: 0, lean: 0, dist: 0, score: 0, nitro: 1, nitroOn: false, nextCar: 70, nextOrb: 30, crashT: 0, shake: 0, top: 0, combo: 1, comboT: 0 });
+  Object.assign(state, { speed: 26, x: 0, vx: 0, lean: 0, dist: 0, score: 0, nitro: 1, nitroOn: false, nextCar: 70, nextOrb: 30, nextBoss: BOSS.firstAt, bosses: 0, crashT: 0, shake: 0, top: 0, combo: 1, comboT: 0 });
   bike.position.set(0, 0, 0); bike.rotation.set(0, 0, 0); bikeTilt.rotation.set(0, 0, 0); bikeTilt.position.set(0, 0, 0);
   bike.visible = true;
+  boss.level = 0; bossClear();
 }
 function startGame() {
   initAudio();
@@ -712,6 +935,7 @@ $('startBtn').addEventListener('click', e => { e.stopPropagation(); startGame();
 $('againBtn').addEventListener('click', e => { e.stopPropagation(); startGame(); });
 
 function crash(car) {
+  if (state.mode !== 'play') return;
   state.mode = 'crash'; state.crashT = 0; state.shake = 1.6;
   document.body.classList.remove('playing'); nUp();
   const f = $('flash'); f.classList.add('go'); setTimeout(() => f.classList.remove('go'), 60);
@@ -734,6 +958,7 @@ function gameOver() {
   $('oScore').textContent = sc.toLocaleString(); $('oBest').textContent = best.toLocaleString();
   $('oDist').textContent = (state.dist / 1000).toFixed(2) + ' KM'; $('oTop').textContent = Math.round(state.top * 3.6) + ' KM/H';
   $('newBest').textContent = isBest ? '★ NEW RECORD ★' : '';
+  $('oBosses').textContent = state.bosses ? `WARDENS DESTROYED: ${state.bosses}` : '';
   elBest.textContent = best.toLocaleString();
   hud.classList.remove('on'); $('over').classList.remove('hide');
 }
@@ -802,8 +1027,8 @@ function update(dt) {
     st.top = Math.max(st.top, st.speed);
     st.comboT -= dt; if (st.comboT <= 0) st.combo = 1;
     st.score += st.speed * dt * 0.6 * (st.nitroOn ? 2 : 1) * st.combo;
-    if (st.dist > st.nextCar) { spawnCars(); st.nextCar = st.dist + Math.max(20, 62 - st.dist / 160) * R(0.75, 1.25); }
-    if (st.dist > st.nextOrb) { spawnOrbs(); st.nextOrb = st.dist + R(70, 140); }
+    if (st.dist > st.nextCar && boss.phase === 'none') { spawnCars(); st.nextCar = st.dist + Math.max(20, 62 - st.dist / 160) * R(0.75, 1.25); }
+    if (st.dist > st.nextOrb && boss.phase === 'none') { spawnOrbs(); st.nextOrb = st.dist + R(70, 140); }
   } else {
     st.speed = damp(st.speed, 0, st.mode === 'crash' ? 1.3 : 0.8, dt);
     st.nitroOn = false;
@@ -854,6 +1079,8 @@ function update(dt) {
       for (let i = 0; i < 26; i++) emit(o.g.position.x, 1, 0, R(-4, 4), R(-1, 5), R(-4, 4), R(0.3, 0.7), R(0.2, 0.45), 3, 2, 0.5, 6, 1);
     }
   }
+
+  updateBoss(dt);
 
   // ---- bike
   if (st.mode === 'crash' || st.mode === 'over') {
@@ -910,9 +1137,10 @@ function update(dt) {
     camera.position.lerp(camTarget, 1 - Math.exp(-dt * 2));
     lookTarget.set(st.x, 0.8, 0);
   } else if (st.mode === 'play') {
-    camTarget.set(st.x * 0.85 - st.vx * 0.06, 1.95 + sf * -0.25, 5.1 - sf * 0.5 - (st.nitroOn ? 0.0 : 0) + (st.nitroOn ? 0.6 : 0));
+    const bf = (boss.phase === 'fight' || boss.phase === 'enter' || boss.phase === 'dying') ? 1 : 0; st.bossCam = damp(st.bossCam || 0, bf, 2, dt);
+    camTarget.set(st.x * 0.85 - st.vx * 0.06, 1.95 + sf * -0.25 + st.bossCam * 0.7, 5.1 - sf * 0.5 - (st.nitroOn ? 0.0 : 0) + (st.nitroOn ? 0.6 : 0));
     camera.position.lerp(camTarget, 1 - Math.exp(-dt * 5));
-    lookTarget.lerp(new THREE.Vector3(st.x * 0.95 + st.vx * 0.08, 1.05, -10), 1 - Math.exp(-dt * 8));
+    lookTarget.lerp(new THREE.Vector3(st.x * 0.95 + st.vx * 0.08, 1.05 + st.bossCam * 0.9, -10 - st.bossCam * 6), 1 - Math.exp(-dt * 8));
   } else {
     camTarget.set(bike.position.x + 3.5, 3.2, bike.position.z + 8);
     camera.position.lerp(camTarget, 1 - Math.exp(-dt * 1.5));
@@ -957,7 +1185,7 @@ function loop() {
 // fonts then signs
 const fontReady = document.fonts ? Promise.race([document.fonts.load('900 64px Orbitron'), new Promise(r => setTimeout(r, 1500))]) : Promise.resolve();
 fontReady.catch(() => { }).then(() => { buildSigns(); loop(); });
-window.__state = state;
+window.__state = state; window.__boss = boss; window.__bossParts = { drops, beams, LANES };
 </script>
 </body>
 </html>
