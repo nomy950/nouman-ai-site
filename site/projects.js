@@ -1,10 +1,11 @@
 /* Project Lab — project catalogue.
    One entry per project. Playable projects need: id, title, cat, tagline, file, thumb, best, overview, how, controls, features, tech.
    Linked-out projects need: id, title, cat, tagline, external, art, extNote, overview.
-   cat is one of: game | app | tool | doc | design.  Validate with: node scripts/validate.mjs */
+   cat is one of: game | app | tool | doc | design.
+   agent is the AI agent that built it (e.g. 'Claude', 'Codex', 'Gemini'); shown on cards and used by the Playground filter.  Validate with: node scripts/validate.mjs */
 window.PROJECTS = [
   {
-    id: 'dropzone', title: 'Dropzone: Battle Royale', cat: 'game', tagline: 'A 3D battle royale on a procedurally generated island — 25 players, one survivor.',
+    id: 'dropzone', agent: 'Claude', title: 'Dropzone: Battle Royale', cat: 'game', tagline: 'A 3D battle royale on a procedurally generated island — 25 players, one survivor.',
     file: 'projects/dropzone.html', thumb: 'thumbs/dropzone.jpg', source: 'https://claude.ai/artifact/G25q7xwaDvKb1B4xfHssAj',
     tags: ['Three.js', '3D', 'AI bots', 'Desktop + Touch'], updated: 'Oct 30, 2026', best: 'Desktop with mouse, or a phone in landscape',
     overview: 'You and 24 AI opponents parachute onto a freshly generated island. Land, loot houses for weapons, armor and medkits, and stay inside the shrinking blue zone. Last one standing wins. Every match builds a new island, with towns, forests, rocks and shipping containers in different places.',
@@ -45,7 +46,7 @@ window.PROJECTS = [
     tech: 'Single HTML file. Three.js 0.160 for rendering (sky, shadows, instancing); terrain, buildings, bots, ballistics and audio are hand-written. Sound is generated live with the Web Audio API, so there are no asset files.',
   },
   {
-    id: 'neon-rider', title: 'Neon Rider', cat: 'game', tagline: 'A synthwave motorbike runner down a midnight highway in 2088, now with boss fights.',
+    id: 'neon-rider', agent: 'Claude', title: 'Neon Rider', cat: 'game', tagline: 'A synthwave motorbike runner down a midnight highway in 2088, now with boss fights.',
     file: 'projects/neon-rider.html', thumb: 'thumbs/neon-rider.jpg', source: 'https://claude.ai/artifact/6dq99qrDehzDeFUB6arjxQ',
     tags: ['Three.js', '3D', 'Boss fights', 'Desktop + Touch'], updated: 'Oct 30, 2026', best: 'Any device; keyboard on desktop',
     overview: 'Weave a neon motorbike through four lanes of traffic on an endless highway. Speed builds the further you ride. Graze cars for near-miss combos and grab golden orbs to refill nitro. Every few kilometres the Warden, an armoured hover-tank, blocks the road. Dodge its lasers and mines, and turn its own EMP charges against it.',
@@ -94,7 +95,7 @@ window.PROJECTS = [
     tech: 'Single HTML file. Three.js with EffectComposer (UnrealBloom + a custom lens shader). The world is a 600 m loop of instanced meshes that scroll past the bike. Audio is Web Audio oscillators and filtered noise. The Warden is a small state machine (enter → fight → enraged → destroyed) with pooled lasers, mines and charges.',
   },
   {
-    id: 'fruit-slash', title: 'Fruit Slash', cat: 'game', tagline: 'Swipe to slice flying fruit. Don\'t touch the bombs.',
+    id: 'fruit-slash', agent: 'Claude', title: 'Fruit Slash', cat: 'game', tagline: 'Swipe to slice flying fruit. Don\'t touch the bombs.',
     file: 'projects/fruit-slash.html', thumb: 'thumbs/fruit-slash.jpg', source: 'https://claude.ai/artifact/XXC2AWfpz3vvKW6WHfeokF',
     tags: ['Canvas 2D', 'Touch-first', 'Arcade'], updated: 'Oct 30, 2026', best: 'Phone or tablet; works with a mouse too',
     overview: 'Fruit is tossed up from the bottom of a wooden board. Swipe through it to slice it in half with a juice splash. Waves get bigger and faster, and bombs appear more often as you go.',
@@ -126,7 +127,7 @@ window.PROJECTS = [
     tech: 'Single HTML file using the Canvas 2D API with no libraries. Swipes are tested as line segments against circles, using coalesced pointer events for precision. The wooden background is drawn once and cached.',
   },
   {
-    id: 'bubble-pop', title: 'Bubble Pop', cat: 'game', tagline: 'A 60-second tap-fest: pop rising bubbles, chain combos, dodge bombs.',
+    id: 'bubble-pop', agent: 'Claude', title: 'Bubble Pop', cat: 'game', tagline: 'A 60-second tap-fest: pop rising bubbles, chain combos, dodge bombs.',
     file: 'projects/bubble-pop.html', thumb: 'thumbs/bubble-pop.jpg', source: 'https://claude.ai/artifact/GCoT8o6xuPNEmw7DY8cfRj',
     tags: ['Canvas 2D', 'Touch-first', 'Casual'], updated: 'Oct 30, 2026', best: 'Phone or tablet; works with a mouse too',
     overview: 'Bubbles drift up from the bottom of an underwater scene. Tap them before they float away. Pop quickly to build a combo multiplier, grab special bubbles for time and lives, and avoid the bombs.',
@@ -158,7 +159,7 @@ window.PROJECTS = [
     tech: 'Single HTML file using the Canvas 2D API, with no libraries. It renders at the device\'s pixel ratio (capped at 2×) for crisp bubbles on phones.',
   },
   {
-    id: 'family-chat', title: 'Family Chat', cat: 'app', tagline: 'A private chat app for the family, invite only.',
+    id: 'family-chat', agent: 'Claude', title: 'Family Chat', cat: 'app', tagline: 'A private chat app for the family, invite only.',
     external: 'https://chat.nouman.ai',
     art: { bg: 'linear-gradient(135deg,#ff8a5b,#ff4f7e 55%,#8b5cf6)', label: '💬', color: '#fff' },
     tags: ['Live app', 'Invite only'], updated: 'Oct 31, 2026',
@@ -166,7 +167,7 @@ window.PROJECTS = [
     extNote: 'This opens Family Chat at chat.nouman.ai. Only invited family members can get in: you sign in with a code sent to your email.',
   },
   {
-    id: 'quotewell', title: 'Quotewell: Stories & Plan', cat: 'doc', tagline: 'Prioritized user stories and the project plan for Quotewell.',
+    id: 'quotewell', agent: 'Claude', title: 'Quotewell: Stories & Plan', cat: 'doc', tagline: 'Prioritized user stories and the project plan for Quotewell.',
     external: 'https://claude.ai/artifact/3rmVKSkagEHQy5KpSLzWKB',
     art: { bg: 'linear-gradient(135deg,#f3efe6,#e2dccd)', label: 'Quotewell', color: '#1e2a3a', font: 34 },
     tags: ['Product planning', 'Living doc'], updated: 'Sep 21, 2026',
@@ -174,7 +175,7 @@ window.PROJECTS = [
     extNote: 'This is a living doc, so it opens on Claude where it can be read, edited and commented on.',
   },
   {
-    id: 'service-marketplace', title: 'Service Marketplace V1', cat: 'design', tagline: 'First-version UI screens for a service marketplace app.',
+    id: 'service-marketplace', agent: 'Claude', title: 'Service Marketplace V1', cat: 'design', tagline: 'First-version UI screens for a service marketplace app.',
     external: 'https://claude.ai/artifact/AFcRdpmzMzXgh6U1FCjBMG',
     art: { bg: 'linear-gradient(135deg,#0f3b3a,#1d7a6b 60%,#7be0b8)', label: 'V1 Screens', color: '#eafff7', font: 30 },
     tags: ['UI design', 'Mockups'], updated: 'Sep 17, 2026',

@@ -15,7 +15,9 @@
     "cdnjs.cloudflare.com",
     "unpkg.com",
     "claude.ai",
-    "www.w3.org"
+    "www.w3.org",
+    "www.linkedin.com",
+    "github.com"
   ],
   "maxFileBytes": 5000000
 }
