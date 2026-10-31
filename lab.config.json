@@ -1,8 +1,11 @@
 {
   "siteDir": "site",
-  "pagesProject": "nouman-lab",
+  "host": "cloudflare-workers",
+  "workerName": "nouman-lab",
+  "workersSubdomain": "noumannsyed",
   "productionUrl": "https://nouman.ai",
-  "pagesUrl": "https://nouman-lab.pages.dev",
+  "workersUrl": "https://nouman-lab.noumannsyed.workers.dev",
+  "previewUrlPattern": "https://<branch-alias>-nouman-lab.noumannsyed.workers.dev",
   "productionBranch": "main",
   "branchPrefix": "update/",
   "allowedExternalHosts": [
