@@ -201,6 +201,10 @@ const CATS = [['all', 'All'], ['game', 'Games'], ['app', 'Apps'], ['doc', 'Docs'
 const CAT_LABEL = { game: 'Game', app: 'App', doc: 'Doc', design: 'Design' };
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+// Where an external project opens: Claude, or its own site.
+const onClaude = p => /(^|\.)claude\.ai$/.test((() => { try { return new URL(p.external).hostname; } catch { return ''; } })());
+const extLabel = p => onClaude(p) ? 'Open on Claude' : 'Open ' + esc(p.title);
+const extRuns = p => onClaude(p) ? 'On Claude' : 'Its own site';
 let cat = 'all', q = '';
 
 /* ---------- home ---------- */
@@ -246,7 +250,7 @@ function renderDetail(p) {
       <div><div class="eyebrow">${CAT_LABEL[p.cat]}${p.updated ? ' · Updated ' + esc(p.updated) : ''}</div>
       <h1>${esc(p.title)}</h1><div class="tagline">${esc(p.tagline)}</div></div>
       <div class="actions">
-        ${playableHere ? `<button class="btn primary" data-tab="try">▶ Play now</button>` : `<a class="btn primary" href="${p.external}" target="_blank" rel="noopener">Open on Claude ↗</a>`}
+        ${playableHere ? `<button class="btn primary" data-tab="try">▶ Play now</button>` : `<a class="btn primary" href="${p.external}" target="_blank" rel="noopener">${extLabel(p)} ↗</a>`}
         <button class="btn" data-tab="docs">${playableHere ? 'Read the docs' : 'About'}</button>
       </div>
     </div>
@@ -297,7 +301,7 @@ function renderPane(p) {
       <div><span>Type</span><b>${CAT_LABEL[p.cat]}</b></div>
       ${p.best ? `<div><span>Best on</span><b>${esc(p.best)}</b></div>` : ''}
       <div><span>Updated</span><b>${esc(p.updated || '—')}</b></div>
-      <div><span>Runs</span><b>${p.file ? 'In browser, no install' : 'On Claude'}</b></div>
+      <div><span>Runs</span><b>${p.file ? 'In browser, no install' : extRuns(p)}</b></div>
     </div>`]);
   if (p.how) sec.push(['how', p.cat === 'game' ? 'How to play' : 'How it works', `<ul>${p.how.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`]);
   if (p.controls) sec.push(['controls', 'Controls', `<div class="tw"><table><tr><th>Action</th><th>Keyboard &amp; mouse</th><th>Touch</th></tr>${p.controls.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table></div>`]);
@@ -305,7 +309,7 @@ function renderPane(p) {
   if (p.features) sec.push(['features', 'Features', `<ul>${p.features.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`]);
   if (p.tips) sec.push(['tips', 'Tips', p.tips.map(x => `<div class="note">${esc(x)}</div>`).join('')]);
   if (p.tech) sec.push(['tech', 'How it\'s built', `<p>${esc(p.tech)}</p>`]);
-  if (!p.file) sec.push(['open', 'Where to find it', `<p>${esc(p.extNote)}</p><p style="margin-top:14px"><a class="btn primary" href="${p.external}" target="_blank" rel="noopener">Open on Claude ↗</a></p>`]);
+  if (!p.file) sec.push(['open', 'Where to find it', `<p>${esc(p.extNote)}</p><p style="margin-top:14px"><a class="btn primary" href="${p.external}" target="_blank" rel="noopener">${extLabel(p)} ↗</a></p>`]);
   pane.innerHTML = `<div class="docs">
     <nav class="toc">${sec.map(([id, t]) => `<a href="#${p.id}" data-jump="d-${id}">${t}</a>`).join('')}</nav>
     <article class="doc">${sec.map(([id, t, h]) => `<h2 id="d-${id}">${t}</h2>${h}`).join('')}</article></div>`;

@@ -158,12 +158,12 @@ window.PROJECTS = [
     tech: 'Single HTML file using the Canvas 2D API, with no libraries. It renders at the device\'s pixel ratio (capped at 2×) for crisp bubbles on phones.',
   },
   {
-    id: 'family-chat', title: 'Family Chat', cat: 'app', tagline: 'A private chat space for the family.',
-    external: 'https://claude.ai/artifact/RhrTzNn6PuS7PeY6zhwepv',
+    id: 'family-chat', title: 'Family Chat', cat: 'app', tagline: 'A private chat app for the family, invite only.',
+    external: 'https://chat.nouman.ai',
     art: { bg: 'linear-gradient(135deg,#ff8a5b,#ff4f7e 55%,#8b5cf6)', label: '💬', color: '#fff' },
-    tags: ['Live app', 'Shared data'], updated: 'Oct 30, 2026',
-    overview: 'A live chat app for the family. Because it holds real family conversations, it stays in its own place on Claude rather than being copied into this showcase.',
-    extNote: 'This one opens on Claude because it holds live, shared conversations. Only people you\'ve shared it with can get in.',
+    tags: ['Live app', 'Invite only'], updated: 'Oct 31, 2026',
+    overview: 'A live chat app for the family, with private chats, groups, photos and replies. It runs on its own at chat.nouman.ai, and only invited family members can sign in.',
+    extNote: 'This opens Family Chat at chat.nouman.ai. Only invited family members can get in: you sign in with a code sent to your email.',
   },
   {
     id: 'quotewell', title: 'Quotewell: Stories & Plan', cat: 'doc', tagline: 'Prioritized user stories and the project plan for Quotewell.',
