@@ -1,0 +1,12 @@
+// Cloudflare Workers (static assets) config for nouman.ai.
+// The site is plain files in ./site; there is no Worker script.
+// main branch → production (nouman.ai); other branches → preview URLs on workers.dev.
+{
+  "name": "nouman-lab",
+  "compatibility_date": "2026-10-01",
+  "assets": {
+    "directory": "./site"
+  },
+  "workers_dev": true,
+  "preview_urls": true
+}
