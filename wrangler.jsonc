@@ -8,5 +8,7 @@
     "directory": "./site"
   },
   "workers_dev": true,
-  "preview_urls": true
+  "preview_urls": true,
+  // Required by `wrangler preview`, which Cloudflare runs for non-main branches. Can stay empty.
+  "previews": {}
 }
