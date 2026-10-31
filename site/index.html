@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Noumann's Project Lab</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0b0c0f; --panel:#13151a; --panel2:#1a1d24; --line:#262a33; --ink:#eceef2; --mute:#8c93a1;
+    --acc:#d4ff3a; --acc-ink:#11140a; --r:14px;
+    --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
+  a{color:inherit}
+  button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+  .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+
+  /* top bar */
+  header.top{position:sticky;top:0;z-index:20;background:rgba(11,12,15,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
+  header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;text-decoration:none}
+  .brand i{width:22px;height:22px;border-radius:6px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-style:normal;font-size:13px}
+  .top nav{display:flex;gap:4px;font-size:14px}
+  .top nav a{text-decoration:none;color:var(--mute);padding:6px 10px;border-radius:8px}
+  .top nav a:hover{color:var(--ink);background:var(--panel)}
+
+  /* hero */
+  .hero{padding:64px 0 34px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+  .hero h1{font-family:var(--display);font-weight:700;font-size:clamp(38px,6.4vw,76px);line-height:1;letter-spacing:-.035em;margin:14px 0 18px;max-width:14ch}
+  .hero p{color:var(--mute);font-size:17px;max-width:58ch}
+  .stats{display:flex;gap:34px;margin-top:30px;flex-wrap:wrap}
+  .stats div{font-family:var(--mono);font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+  .stats b{display:block;font-family:var(--display);font-size:30px;color:var(--ink);letter-spacing:-.02em;text-transform:none}
+
+  /* controls */
+  .bar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 0;border-top:1px solid var(--line);margin-top:10px}
+  .chips{display:flex;gap:6px;flex-wrap:wrap}
+  .chip{padding:7px 14px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;color:var(--mute);transition:.15s}
+  .chip:hover{color:var(--ink);border-color:#3a3f4a}
+  .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .search{position:relative}
+  .search input{background:var(--panel);border:1px solid var(--line);border-radius:999px;color:var(--ink);font:inherit;font-size:14px;padding:8px 14px 8px 34px;width:230px;outline:none}
+  .search input:focus{border-color:var(--acc)}
+  .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
+
+  /* grid */
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;padding:8px 0 70px}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-decoration:none;display:flex;flex-direction:column;transition:transform .2s,border-color .2s}
+  .card:hover{transform:translateY(-3px);border-color:#3a3f4a}
+  .thumb{aspect-ratio:16/10;position:relative;overflow:hidden;background:var(--panel2)}
+  .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
+  .card:hover .thumb img{transform:scale(1.04)}
+  .thumb .badge{position:absolute;left:12px;top:12px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+  .thumb .live{position:absolute;right:12px;top:12px;font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:6px;background:var(--acc);color:var(--acc-ink);font-weight:600}
+  .card .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .card h3{font-family:var(--display);font-size:20px;letter-spacing:-.015em}
+  .card p{color:var(--mute);font-size:14px}
+  .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
+  .tag{font-family:var(--mono);font-size:11px;color:#b6bcc8;border:1px solid var(--line);padding:2px 7px;border-radius:5px}
+  .empty{color:var(--mute);padding:40px 0;grid-column:1/-1}
+
+  /* art thumbs for non-game projects */
+  .art{width:100%;height:100%;display:grid;place-items:center;font-family:var(--display);font-weight:700;letter-spacing:-.03em}
+
+  /* about / add */
+  .section{border-top:1px solid var(--line);padding:56px 0}
+  .section h2{font-family:var(--display);font-size:30px;letter-spacing:-.02em;margin-bottom:12px}
+  .section p{color:var(--mute);max-width:62ch}
+  .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:24px}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
+  .step b{font-family:var(--mono);color:var(--acc);font-size:12px}
+  .step h4{font-family:var(--display);font-size:17px;margin:6px 0 4px}
+  .step p{font-size:14px}
+  .prompt{margin-top:22px;background:var(--panel2);border:1px dashed #3a3f4a;border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:13px;color:#cfd4dc;display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .copy{font-family:var(--body);font-size:13px;background:var(--ink);color:var(--bg);padding:6px 12px;border-radius:8px;flex-shrink:0}
+  footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute);font-size:13px}
+
+  /* detail view */
+  #detail{display:none}
+  body.detail #home{display:none}
+  body.detail #detail{display:block}
+  .back{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:14px;margin:26px 0 18px;text-decoration:none}
+  .back:hover{color:var(--ink)}
+  .dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;padding-bottom:22px}
+  .dhead h1{font-family:var(--display);font-size:clamp(34px,5vw,56px);letter-spacing:-.03em;line-height:1.02;margin-top:8px}
+  .dhead .tagline{color:var(--mute);font-size:17px;margin-top:8px;max-width:60ch}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none;border:1px solid var(--line);background:var(--panel)}
+  .btn:hover{border-color:#3a3f4a}
+  .btn.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+  .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:24px}
+  .tab{padding:12px 16px;font-size:14.5px;color:var(--mute);border-bottom:2px solid transparent;margin-bottom:-1px}
+  .tab.on{color:var(--ink);border-bottom-color:var(--acc)}
+  .stage{position:relative;background:#000;border:1px solid var(--line);border-radius:var(--r);overflow:hidden;aspect-ratio:16/10;max-height:78vh;width:100%}
+  .stage iframe{position:absolute;inset:0;width:100%;height:100%;border:0;display:block;background:#000}
+  .stage .poster{position:absolute;inset:0;display:grid;place-items:center;background-size:cover;background-position:center}
+  .stage .poster:before{content:'';position:absolute;inset:0;background:rgba(0,0,0,.45)}
+  .stage .poster button{position:relative;display:flex;align-items:center;gap:10px;background:var(--acc);color:var(--acc-ink);font-weight:700;font-size:17px;padding:14px 26px;border-radius:999px;box-shadow:0 10px 40px rgba(0,0,0,.5)}
+  .stagebar{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px;flex-wrap:wrap;font-size:13px;color:var(--mute)}
+  .stagebar .actions .btn{padding:7px 12px;font-size:13px}
+  .ext{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:40px 28px;text-align:center}
+  .ext p{color:var(--mute);max-width:52ch;margin:10px auto 22px}
+
+  .docs{display:grid;grid-template-columns:200px minmax(0,1fr);gap:40px;padding-bottom:80px}
+  .toc{position:sticky;top:84px;align-self:start;display:flex;flex-direction:column;gap:2px;font-size:13.5px}
+  .toc a{color:var(--mute);text-decoration:none;padding:5px 10px;border-left:2px solid var(--line)}
+  .toc a:hover{color:var(--ink);border-left-color:var(--acc)}
+  .doc h2{font-family:var(--display);font-size:22px;letter-spacing:-.01em;margin:34px 0 10px;scroll-margin-top:84px}
+  .doc h2:first-child{margin-top:0}
+  .doc p,.doc li{color:#c3c8d2}
+  .doc ul{padding-left:20px;display:flex;flex-direction:column;gap:5px}
+  .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .doc table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
+  .doc th,.doc td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+  .doc th{font-family:var(--mono);font-size:11.5px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--mute)}
+  .doc td:first-child{white-space:nowrap}
+  kbd{font-family:var(--mono);font-size:12px;background:var(--panel2);border:1px solid var(--line);border-bottom-width:2px;padding:1px 6px;border-radius:5px;color:var(--ink)}
+  .meta{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-top:4px}
+  .meta div{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px 14px}
+  .meta span{display:block;font-family:var(--mono);font-size:11px;color:var(--mute);text-transform:uppercase;letter-spacing:.06em}
+  .meta b{font-weight:600;font-size:14.5px}
+  .note{background:rgba(212,255,58,.07);border:1px solid rgba(212,255,58,.25);border-radius:10px;padding:12px 14px;color:#dfe8b8;font-size:14px;margin-top:12px}
+
+  @media (max-width:760px){
+    .docs{grid-template-columns:minmax(0,1fr)}
+    .doc td:first-child{white-space:normal}
+    .doc th,.doc td{padding:8px 8px}
+    .toc{display:none}
+    .top nav a.hide-sm{display:none}
+    .search input{width:100%}
+    .search{flex:1}
+    .stage{aspect-ratio:3/4}
+  }
+  :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <a class="brand" href="#" data-home><i>N</i>Project Lab</a>
+    <nav>
+      <a href="#" data-home>Projects</a>
+      <a href="#add-project" class="hide-sm" data-scroll="add">Add a project</a>
+    </nav>
+  </div>
+</header>
+
+<main>
+  <!-- HOME -->
+  <div id="home">
+    <section class="wrap hero">
+      <div class="eyebrow">Noumann Syed · Portfolio</div>
+      <h1>Things I've built, ready to play.</h1>
+      <p>Every project here runs right in your browser. Open one to try it live, then read the docs for controls, rules and how it was made.</p>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <div class="wrap">
+      <div class="bar">
+        <div class="chips" id="chips"></div>
+        <label class="search">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+          <input id="q" type="search" placeholder="Search projects" aria-label="Search projects">
+        </label>
+      </div>
+      <div class="grid" id="grid"></div>
+    </div>
+
+    <section class="section" id="add">
+      <div class="wrap">
+        <div class="eyebrow">Growing the lab</div>
+        <h2>Adding a new project</h2>
+        <p>Each project lives inside this site as its own page, with a card, a live "Try it" view and its own documentation. New projects get added the same way the first ones did.</p>
+        <div class="steps">
+          <div class="step"><b>01</b><h4>Build it with Claude</h4><p>Make a game, tool or app in any chat. Anything that runs as a web page works best.</p></div>
+          <div class="step"><b>02</b><h4>Ask to add it here</h4><p>Say which project to add. Claude copies it into the lab, takes a screenshot and writes the docs.</p></div>
+          <div class="step"><b>03</b><h4>It shows up live</h4><p>You get a preview link first. Once you approve it, the change goes live on nouman.ai.</p></div>
+        </div>
+        <div class="prompt"><span id="promptText">Add my latest project to my Project Lab, with docs and a Try it view.</span><button class="copy" id="copyBtn">Copy</button></div>
+      </div>
+    </section>
+  </div>
+
+  <!-- DETAIL -->
+  <div id="detail" class="wrap"></div>
+</main>
+
+<footer><div class="wrap">Built with Claude · Projects run in a sandboxed frame; best scores are saved in your own browser.</div></footer>
+
+<script src="projects.js"></script>
+<script>
+(() => {
+const PROJECTS = window.PROJECTS || [];
+
+const CATS = [['all', 'All'], ['game', 'Games'], ['app', 'Apps'], ['doc', 'Docs'], ['design', 'Design']];
+const CAT_LABEL = { game: 'Game', app: 'App', doc: 'Doc', design: 'Design' };
+const $ = s => document.querySelector(s);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+let cat = 'all', q = '';
+
+/* ---------- home ---------- */
+const playable = PROJECTS.filter(p => p.file).length;
+$('#stats').innerHTML = `<div><b>${PROJECTS.length}</b>Projects</div><div><b>${playable}</b>Playable here</div><div><b>${new Set(PROJECTS.map(p => p.cat)).size}</b>Categories</div>`;
+
+function thumbHTML(p) {
+  if (p.thumb) return `<img src="${p.thumb}" alt="" loading="lazy">`;
+  const a = p.art;
+  return `<div class="art" style="background:${a.bg};color:${a.color};font-size:${a.font || 64}px">${esc(a.label)}</div>`;
+}
+function renderChips() {
+  $('#chips').innerHTML = CATS.filter(([k]) => k === 'all' || PROJECTS.some(p => p.cat === k))
+    .map(([k, l]) => `<button class="chip ${k === cat ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('');
+}
+function renderGrid() {
+  const t = q.trim().toLowerCase();
+  const list = PROJECTS.filter(p => (cat === 'all' || p.cat === cat) &&
+    (!t || [p.title, p.tagline, ...(p.tags || [])].join(' ').toLowerCase().includes(t)));
+  $('#grid').innerHTML = list.length ? list.map(p => `
+    <a class="card" href="#${p.id}">
+      <div class="thumb">${thumbHTML(p)}<span class="badge">${CAT_LABEL[p.cat]}</span>${p.file ? '<span class="live">▶ Playable</span>' : ''}</div>
+      <div class="body"><h3>${esc(p.title)}</h3><p>${esc(p.tagline)}</p>
+      <div class="tags">${(p.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div></div>
+    </a>`).join('') : '<div class="empty">No projects match that search.</div>';
+}
+$('#chips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; cat = b.dataset.cat; renderChips(); renderGrid(); });
+$('#q').addEventListener('input', e => { q = e.target.value; renderGrid(); });
+$('#copyBtn').addEventListener('click', async () => {
+  try { await navigator.clipboard.writeText($('#promptText').textContent); $('#copyBtn').textContent = 'Copied'; }
+  catch (e) { $('#copyBtn').textContent = 'Select & copy'; }
+  setTimeout(() => $('#copyBtn').textContent = 'Copy', 1600);
+});
+
+/* ---------- detail ---------- */
+let curTab = 'try';
+function renderDetail(p) {
+  const playableHere = !!p.file;
+  const tabs = playableHere ? [['try', 'Try it'], ['docs', 'Documentation']] : [['try', 'Open'], ['docs', 'About']];
+  $('#detail').innerHTML = `
+    <a class="back" href="#" data-home>← All projects</a>
+    <div class="dhead">
+      <div><div class="eyebrow">${CAT_LABEL[p.cat]}${p.updated ? ' · Updated ' + esc(p.updated) : ''}</div>
+      <h1>${esc(p.title)}</h1><div class="tagline">${esc(p.tagline)}</div></div>
+      <div class="actions">
+        ${playableHere ? `<button class="btn primary" data-tab="try">▶ Play now</button>` : `<a class="btn primary" href="${p.external}" target="_blank" rel="noopener">Open on Claude ↗</a>`}
+        <button class="btn" data-tab="docs">${playableHere ? 'Read the docs' : 'About'}</button>
+      </div>
+    </div>
+    <div class="tabs">${tabs.map(([k, l]) => `<button class="tab ${k === curTab ? 'on' : ''}" data-tab="${k}">${l}</button>`).join('')}</div>
+    <div id="pane"></div>`;
+  renderPane(p);
+}
+function renderPane(p) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('on', t.dataset.tab === curTab));
+  const pane = $('#pane');
+  if (curTab === 'try') {
+    if (p.file) {
+      pane.innerHTML = `
+        <div class="stage" id="stage">
+          <div class="poster" style="background-image:url(${p.thumb})"><button id="launch">▶ Launch ${esc(p.title.split(':')[0])}</button></div>
+        </div>
+        <div class="stagebar">
+          <span>Best on: ${esc(p.best || 'any device')} · Click inside the game to give it keyboard focus.</span>
+          <div class="actions">
+            <button class="btn" id="restart">↻ Restart</button>
+            <button class="btn" id="fs">⛶ Fullscreen</button>
+          </div>
+        </div>`;
+      const launch = () => {
+        $('#stage').innerHTML = `<iframe src="${p.file}" title="${esc(p.title)}" allow="fullscreen; autoplay; pointer-lock; gamepad" allowfullscreen></iframe>`;
+        setTimeout(() => { try { $('#stage iframe').focus(); } catch (e) {} }, 300);
+      };
+      $('#launch').addEventListener('click', launch);
+      $('#restart').addEventListener('click', launch);
+      $('#fs').addEventListener('click', async () => {
+        if (!$('#stage iframe')) launch();
+        const el = $('#stage');
+        try { await (el.requestFullscreen ? el.requestFullscreen() : el.webkitRequestFullscreen()); }
+        catch (e) { $('#fs').textContent = 'Fullscreen unavailable here'; }
+      });
+    } else {
+      pane.innerHTML = `<div class="ext">
+        <div style="max-width:420px;margin:0 auto;aspect-ratio:16/9;border-radius:12px;overflow:hidden">${thumbHTML(p)}</div>
+        <p>${esc(p.extNote)}</p>
+        <a class="btn primary" href="${p.external}" target="_blank" rel="noopener">Open ${esc(p.title)} ↗</a></div>`;
+    }
+    return;
+  }
+  // docs
+  const sec = [];
+  sec.push(['overview', 'Overview', `<p>${esc(p.overview)}</p>
+    <div class="meta" style="margin-top:16px">
+      <div><span>Type</span><b>${CAT_LABEL[p.cat]}</b></div>
+      ${p.best ? `<div><span>Best on</span><b>${esc(p.best)}</b></div>` : ''}
+      <div><span>Updated</span><b>${esc(p.updated || '—')}</b></div>
+      <div><span>Runs</span><b>${p.file ? 'In browser, no install' : 'On Claude'}</b></div>
+    </div>`]);
+  if (p.how) sec.push(['how', p.cat === 'game' ? 'How to play' : 'How it works', `<ul>${p.how.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`]);
+  if (p.controls) sec.push(['controls', 'Controls', `<div class="tw"><table><tr><th>Action</th><th>Keyboard &amp; mouse</th><th>Touch</th></tr>${p.controls.map(r => `<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table></div>`]);
+  (p.tables || []).forEach((t, i) => sec.push(['t' + i, t.title, `<div class="tw"><table><tr>${t.head.map(h => `<th>${esc(h)}</th>`).join('')}</tr>${t.rows.map(r => `<tr>${r.map(c => `<td>${esc(c)}</td>`).join('')}</tr>`).join('')}</table></div>`]));
+  if (p.features) sec.push(['features', 'Features', `<ul>${p.features.map(x => `<li>${esc(x)}</li>`).join('')}</ul>`]);
+  if (p.tips) sec.push(['tips', 'Tips', p.tips.map(x => `<div class="note">${esc(x)}</div>`).join('')]);
+  if (p.tech) sec.push(['tech', 'How it\'s built', `<p>${esc(p.tech)}</p>`]);
+  if (!p.file) sec.push(['open', 'Where to find it', `<p>${esc(p.extNote)}</p><p style="margin-top:14px"><a class="btn primary" href="${p.external}" target="_blank" rel="noopener">Open on Claude ↗</a></p>`]);
+  pane.innerHTML = `<div class="docs">
+    <nav class="toc">${sec.map(([id, t]) => `<a href="#${p.id}" data-jump="d-${id}">${t}</a>`).join('')}</nav>
+    <article class="doc">${sec.map(([id, t, h]) => `<h2 id="d-${id}">${t}</h2>${h}`).join('')}</article></div>`;
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest('[data-tab]');
+  if (t && document.body.classList.contains('detail')) {
+    curTab = t.dataset.tab; const p = PROJECTS.find(x => x.id === location.hash.slice(1));
+    if (p) { renderPane(p); $('.tabs').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    return;
+  }
+  const j = e.target.closest('[data-jump]');
+  if (j) { e.preventDefault(); const el = document.getElementById(j.dataset.jump); if (el) el.scrollIntoView({ behavior: 'smooth' }); return; }
+  const h = e.target.closest('[data-home]');
+  if (h) { e.preventDefault(); if (location.hash) location.hash = ''; else route(); if (h.dataset.scroll) setTimeout(() => $('#' + h.dataset.scroll).scrollIntoView({ behavior: 'smooth' }), 30); else scrollTo(0, 0); }
+  const s = e.target.closest('[data-scroll]');
+  if (s && !h) { e.preventDefault(); }
+});
+document.querySelector('nav a[data-scroll]').addEventListener('click', e => {
+  e.preventDefault();
+  if (location.hash) { location.hash = ''; }
+  setTimeout(() => $('#add').scrollIntoView({ behavior: 'smooth' }), 40);
+});
+
+/* ---------- routing (#project-id) ---------- */
+function route() {
+  const id = location.hash.slice(1);
+  const p = PROJECTS.find(x => x.id === id);
+  if (p) {
+    curTab = p.file ? 'try' : 'docs';
+    document.body.classList.add('detail'); renderDetail(p); scrollTo(0, 0);
+    document.title = p.title + ' · Project Lab';
+  } else {
+    document.body.classList.remove('detail'); $('#detail').innerHTML = '';
+    document.title = "Noumann's Project Lab";
+  }
+}
+addEventListener('hashchange', route);
+renderChips(); renderGrid(); route();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+{
+  "siteDir": "site",
+  "pagesProject": "nouman-lab",
+  "productionUrl": "https://nouman.ai",
+  "pagesUrl": "https://nouman-lab.pages.dev",
+  "productionBranch": "main",
+  "branchPrefix": "update/",
+  "allowedExternalHosts": [
+    "fonts.googleapis.com",
+    "fonts.gstatic.com",
+    "cdn.jsdelivr.net",
+    "cdnjs.cloudflare.com",
+    "unpkg.com",
+    "claude.ai",
+    "www.w3.org"
+  ],
+  "maxFileBytes": 5000000
+}

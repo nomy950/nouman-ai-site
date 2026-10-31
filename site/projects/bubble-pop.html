@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>Bubble Pop</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@500;700&display=swap" rel="stylesheet">
+<style>
+  :root { --ink:#13213a; --accent:#ff5d8f; --gold:#ffc83d; }
+  * { box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent; }
+  html,body { height:100%; overflow:hidden; background:#0d1b3a; font-family:'Fredoka',system-ui,sans-serif; color:#fff; touch-action:none; user-select:none; -webkit-user-select:none; }
+  canvas { position:fixed; inset:0; width:100%; height:100%; display:block; }
+  .hud { position:fixed; left:0; right:0; top:0; display:flex; justify-content:space-between; align-items:center; gap:8px;
+         padding:calc(env(safe-area-inset-top) + 12px) calc(env(safe-area-inset-right) + 14px) 10px calc(env(safe-area-inset-left) + 14px);
+         pointer-events:none; z-index:2; }
+  .pill { background:rgba(255,255,255,.14); backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px); border-radius:999px; padding:6px 14px; font-weight:700; font-size:18px; white-space:nowrap; }
+  .pill small { font-weight:500; opacity:.75; font-size:12px; margin-right:4px; text-transform:uppercase; letter-spacing:.06em; }
+  .lives { letter-spacing:2px; }
+  .overlay { position:fixed; inset:0; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:14px; padding:24px; z-index:3;
+             background:radial-gradient(ellipse at center, rgba(13,27,58,.55), rgba(13,27,58,.9)); }
+  .overlay.hidden { display:none; }
+  h1 { font-size:clamp(44px, 12vw, 84px); line-height:1; letter-spacing:-.02em;
+       background:linear-gradient(180deg,#fff, #9be7ff); -webkit-background-clip:text; background-clip:text; color:transparent; filter:drop-shadow(0 4px 18px rgba(120,200,255,.45)); }
+  .sub { opacity:.85; font-size:17px; max-width:340px; line-height:1.4; }
+  .legend { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; font-size:14px; opacity:.9; margin:4px 0 6px; }
+  .legend span { display:flex; align-items:center; gap:6px; }
+  .dot { width:16px; height:16px; border-radius:50%; display:inline-block; }
+  button { font-family:inherit; font-weight:700; font-size:22px; border:0; border-radius:999px; padding:14px 40px; cursor:pointer; color:#fff;
+           background:linear-gradient(180deg,#ff7aa5,#ff3d78); box-shadow:0 8px 24px rgba(255,61,120,.45), inset 0 -3px 0 rgba(0,0,0,.15); }
+  button:active { transform:scale(.96); }
+  .big { font-size:56px; font-weight:700; }
+  .best { opacity:.8; font-size:16px; }
+  .toggle { position:fixed; bottom:calc(env(safe-area-inset-bottom) + 14px); right:calc(env(safe-area-inset-right) + 14px); z-index:4;
+            font-size:18px; padding:8px 12px; background:rgba(255,255,255,.14); box-shadow:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+
+<div class="hud" id="hud">
+  <div class="pill"><small>Score</small><span id="score">0</span></div>
+  <div class="pill" id="comboPill" style="opacity:0"><span id="combo">x1</span></div>
+  <div class="pill"><small>Time</small><span id="time">60</span></div>
+  <div class="pill lives" id="lives">❤️❤️❤️</div>
+</div>
+
+<div class="overlay" id="start">
+  <h1>Bubble Pop</h1>
+  <p class="sub">Tap bubbles before they float away. Chain pops quickly for combos!</p>
+  <div class="legend">
+    <span><i class="dot" style="background:radial-gradient(circle at 35% 30%,#fff,#5ec8ff)"></i>+10 (smaller = more)</span>
+    <span><i class="dot" style="background:radial-gradient(circle at 35% 30%,#fff,#ffc83d)"></i>+50 &amp; +3s</span>
+    <span><i class="dot" style="background:radial-gradient(circle at 35% 30%,#fff,#ff6b6b)"></i>❤️ extra life</span>
+    <span><i class="dot" style="background:radial-gradient(circle at 35% 30%,#888,#222)"></i>💣 avoid!</span>
+  </div>
+  <p class="sub" style="font-size:14px;opacity:.7">Miss 3 bubbles or hit a bomb and you lose a life.</p>
+  <button id="play">Play</button>
+  <div class="best" id="bestStart"></div>
+</div>
+
+<div class="overlay hidden" id="over">
+  <div class="sub" id="overReason">Time's up!</div>
+  <div class="big" id="final">0</div>
+  <div class="best" id="bestOver"></div>
+  <div class="sub" id="stats" style="font-size:15px"></div>
+  <button id="again">Play again</button>
+</div>
+
+<button class="toggle" id="sound" aria-label="Toggle sound">🔊</button>
+
+<script>
+(() => {
+  const cvs = document.getElementById('c');
+  const ctx = cvs.getContext('2d');
+  let W = 0, H = 0, DPR = 1;
+  function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    W = window.innerWidth; H = window.innerHeight;
+    cvs.width = W * DPR; cvs.height = H * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+  }
+  window.addEventListener('resize', resize); resize();
+
+  // ---------- storage (best effort) ----------
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (e) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+  };
+  let best = parseInt(store.get('bubblepop-best') || '0', 10) || 0;
+
+  // ---------- audio ----------
+  let actx = null, soundOn = store.get('bubblepop-sound') !== 'off';
+  const soundBtn = document.getElementById('sound');
+  soundBtn.textContent = soundOn ? '🔊' : '🔇';
+  soundBtn.addEventListener('click', e => {
+    e.stopPropagation(); soundOn = !soundOn;
+    soundBtn.textContent = soundOn ? '🔊' : '🔇';
+    store.set('bubblepop-sound', soundOn ? 'on' : 'off');
+    initAudio();
+  });
+  function initAudio() {
+    if (actx || !soundOn) return;
+    try { actx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) { actx = null; }
+  }
+  function tone(freq, dur, type = 'sine', vol = .25, slide = 0) {
+    if (!soundOn || !actx) return;
+    try {
+      const t = actx.currentTime, o = actx.createOscillator(), g = actx.createGain();
+      o.type = type; o.frequency.setValueAtTime(freq, t);
+      if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq * slide), t + dur);
+      g.gain.setValueAtTime(vol, t); g.gain.exponentialRampToValueAtTime(.001, t + dur);
+      o.connect(g).connect(actx.destination); o.start(t); o.stop(t + dur);
+    } catch (e) {}
+  }
+  const sfx = {
+    pop: c => tone(500 + Math.min(c, 12) * 60 + Math.random() * 80, .12, 'sine', .3, 2.2),
+    gold: () => { tone(880, .12, 'triangle', .25); setTimeout(() => tone(1320, .18, 'triangle', .25), 70); },
+    heart: () => { tone(660, .1, 'triangle', .25); setTimeout(() => tone(990, .2, 'triangle', .25), 90); },
+    bomb: () => tone(160, .45, 'sawtooth', .3, .3),
+    miss: () => tone(240, .18, 'square', .08, .7),
+  };
+
+  // ---------- game state ----------
+  const COLORS = ['#5ec8ff', '#7d8cff', '#b27dff', '#ff7ad9', '#53e3b5', '#7fe36b'];
+  let bubbles = [], particles = [], floaters = [];
+  let score, lives, timeLeft, combo, comboTimer, spawnTimer, elapsed, misses, popped, maxCombo, running = false, lastT = 0;
+
+  const $ = id => document.getElementById(id);
+  const hudScore = $('score'), hudTime = $('time'), hudLives = $('lives'), hudCombo = $('combo'), comboPill = $('comboPill');
+
+  function reset() {
+    bubbles = []; particles = []; floaters = [];
+    score = 0; lives = 3; timeLeft = 60; combo = 0; comboTimer = 0; spawnTimer = 0; elapsed = 0; misses = 0; popped = 0; maxCombo = 0;
+    updateHud();
+  }
+
+  function difficulty() { return Math.min(elapsed / 60, 1.4); }
+
+  function spawn() {
+    const d = difficulty();
+    const r = rand(Math.max(18, Math.min(W, H) * .045), Math.max(34, Math.min(W, H) * .09)) * (1 - d * .2);
+    const roll = Math.random();
+    let kind = 'normal';
+    if (roll < .05 + d * .08) kind = 'bomb';
+    else if (roll < .11 + d * .08) kind = 'gold';
+    else if (roll < .125 + d * .08 && lives < 5) kind = 'heart';
+    bubbles.push({
+      x: rand(r + 6, W - r - 6), y: H + r + 4, r,
+      vy: rand(55, 95) * (1 + d * .9) * (kind === 'gold' ? 1.35 : 1),
+      wob: rand(0, Math.PI * 2), wobSpd: rand(1.5, 3), wobAmp: rand(10, 28),
+      color: COLORS[(Math.random() * COLORS.length) | 0], kind, born: 0
+    });
+  }
+
+  function rand(a, b) { return a + Math.random() * (b - a); }
+
+  function burst(x, y, color, n = 14) {
+    for (let i = 0; i < n; i++) {
+      const a = Math.random() * Math.PI * 2, s = rand(80, 260);
+      particles.push({ x, y, vx: Math.cos(a) * s, vy: Math.sin(a) * s, life: 1, size: rand(2, 5), color });
+    }
+  }
+  function floatText(x, y, text, color = '#fff') { floaters.push({ x, y, text, color, life: 1 }); }
+
+  function updateHud() {
+    hudScore.textContent = score;
+    hudTime.textContent = Math.ceil(timeLeft);
+    hudLives.textContent = '❤️'.repeat(Math.max(lives, 0)) || '💔';
+    hudCombo.textContent = 'x' + Math.max(1, combo);
+    comboPill.style.opacity = combo >= 2 ? 1 : 0;
+  }
+
+  function loseLife(reason) {
+    lives--;
+    flash = .35;
+    if (lives <= 0) end(reason);
+  }
+
+  // ---------- input ----------
+  function handleTap(px, py) {
+    if (!running) return;
+    // top-most bubble first
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      const b = bubbles[i], bx = b.x + Math.sin(b.wob) * b.wobAmp;
+      const hitR = b.r + 10; // generous touch target
+      if ((px - bx) ** 2 + (py - b.y) ** 2 <= hitR * hitR) {
+        bubbles.splice(i, 1);
+        pop(b, bx);
+        return;
+      }
+    }
+  }
+
+  function pop(b, bx) {
+    if (b.kind === 'bomb') {
+      burst(bx, b.y, '#ff8a3d', 28); burst(bx, b.y, '#444', 14);
+      floatText(bx, b.y, 'BOOM!', '#ff8a3d');
+      sfx.bomb(); combo = 0; shake = 14;
+      loseLife('Kaboom! A bomb got you.');
+      updateHud(); return;
+    }
+    combo++; comboTimer = 1.1; maxCombo = Math.max(maxCombo, combo); popped++;
+    const mult = 1 + Math.floor((combo - 1) / 3) * .5;
+    let pts;
+    if (b.kind === 'gold') { pts = Math.round(50 * mult); timeLeft += 3; sfx.gold(); floatText(bx, b.y - 22, '+3s', '#ffe38a'); }
+    else if (b.kind === 'heart') { pts = Math.round(20 * mult); lives = Math.min(5, lives + 1); sfx.heart(); floatText(bx, b.y - 22, '+❤️', '#ff8fa3'); }
+    else { pts = Math.round((10 + Math.round((60 - b.r) / 4)) * mult); sfx.pop(combo); }
+    score += pts;
+    const col = b.kind === 'gold' ? '#ffc83d' : b.kind === 'heart' ? '#ff6b6b' : b.color;
+    burst(bx, b.y, col, b.kind === 'normal' ? 14 : 24);
+    rings.push({ x: bx, y: b.y, r: b.r, life: 1, color: col });
+    floatText(bx, b.y, '+' + pts, col);
+    updateHud();
+  }
+
+  cvs.addEventListener('pointerdown', e => { e.preventDefault(); initAudio(); handleTap(e.clientX, e.clientY); });
+
+  // ---------- loop ----------
+  let rings = [], flash = 0, shake = 0;
+  const bgBubbles = Array.from({ length: 26 }, () => ({ x: Math.random(), y: Math.random(), r: rand(2, 7), s: rand(.01, .04) }));
+
+  function frame(t) {
+    const dt = Math.min((t - lastT) / 1000 || 0, .05); lastT = t;
+    if (running) step(dt);
+    else stepFx(dt);
+    draw(dt);
+    requestAnimationFrame(frame);
+  }
+
+  function step(dt) {
+    elapsed += dt;
+    timeLeft -= dt;
+    if (timeLeft <= 0) { timeLeft = 0; updateHud(); end("Time's up!"); return; }
+
+    const d = difficulty();
+    spawnTimer -= dt;
+    if (spawnTimer <= 0) { spawn(); if (Math.random() < d * .35) spawn(); spawnTimer = rand(.45, .8) / (1 + d * 1.1); }
+
+    if (comboTimer > 0) { comboTimer -= dt; if (comboTimer <= 0) { combo = 0; updateHud(); } }
+
+    for (let i = bubbles.length - 1; i >= 0; i--) {
+      const b = bubbles[i];
+      b.y -= b.vy * dt; b.wob += b.wobSpd * dt; b.born = Math.min(1, b.born + dt * 4);
+      if (b.y < -b.r - 4) {
+        bubbles.splice(i, 1);
+        if (b.kind === 'normal' || b.kind === 'gold') {
+          misses++; combo = 0; sfx.miss();
+          if (misses % 3 === 0) { loseLife('Too many bubbles got away.'); }
+          updateHud();
+          if (!running) return;
+        }
+      }
+    }
+    if (Math.ceil(timeLeft) !== +hudTime.textContent) updateHud();
+    stepFx(dt);
+  }
+
+  function stepFx(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+      const p = particles[i]; p.x += p.vx * dt; p.y += p.vy * dt; p.vy += 300 * dt; p.vx *= .98; p.life -= dt * 1.6;
+      if (p.life <= 0) particles.splice(i, 1);
+    }
+    for (let i = floaters.length - 1; i >= 0; i--) { const f = floaters[i]; f.y -= 50 * dt; f.life -= dt * 1.2; if (f.life <= 0) floaters.splice(i, 1); }
+    for (let i = rings.length - 1; i >= 0; i--) { const r = rings[i]; r.r += 160 * dt; r.life -= dt * 3; if (r.life <= 0) rings.splice(i, 1); }
+    flash = Math.max(0, flash - dt); shake = Math.max(0, shake - dt * 40);
+  }
+
+  function draw() {
+    // background
+    const g = ctx.createLinearGradient(0, 0, 0, H);
+    g.addColorStop(0, '#0d1b3a'); g.addColorStop(.6, '#163a6b'); g.addColorStop(1, '#1d6a8f');
+    ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = 'rgba(255,255,255,.08)';
+    for (const s of bgBubbles) {
+      s.y -= s.s * .016; if (s.y < -.02) { s.y = 1.02; s.x = Math.random(); }
+      ctx.beginPath(); ctx.arc(s.x * W, s.y * H, s.r, 0, Math.PI * 2); ctx.fill();
+    }
+
+    ctx.save();
+    if (shake > 0) ctx.translate(rand(-shake, shake), rand(-shake, shake));
+
+    for (const b of bubbles) drawBubble(b);
+
+    for (const r of rings) {
+      ctx.strokeStyle = r.color; ctx.globalAlpha = Math.max(r.life, 0) * .8; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.arc(r.x, r.y, r.r, 0, Math.PI * 2); ctx.stroke();
+    }
+    for (const p of particles) {
+      ctx.globalAlpha = Math.max(p.life, 0); ctx.fillStyle = p.color;
+      ctx.beginPath(); ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    for (const f of floaters) {
+      ctx.globalAlpha = Math.max(f.life, 0); ctx.fillStyle = f.color;
+      ctx.font = '700 22px Fredoka, system-ui, sans-serif';
+      ctx.fillText(f.text, f.x, f.y);
+    }
+    ctx.globalAlpha = 1;
+    ctx.restore();
+
+    if (flash > 0) { ctx.fillStyle = `rgba(255,60,80,${flash * .6})`; ctx.fillRect(0, 0, W, H); }
+  }
+
+  function drawBubble(b) {
+    const x = b.x + Math.sin(b.wob) * b.wobAmp, y = b.y;
+    const r = b.r * (.6 + .4 * easeOut(b.born)) * (1 + Math.sin(b.wob * 1.7) * .03);
+    let base = b.color;
+    if (b.kind === 'gold') base = '#ffc83d';
+    if (b.kind === 'heart') base = '#ff6b6b';
+    if (b.kind === 'bomb') base = '#2a2a33';
+
+    // glow
+    if (b.kind === 'gold') { ctx.shadowColor = '#ffc83d'; ctx.shadowBlur = 22; }
+    const grad = ctx.createRadialGradient(x - r * .35, y - r * .4, r * .1, x, y, r);
+    if (b.kind === 'bomb') {
+      grad.addColorStop(0, '#6a6a78'); grad.addColorStop(1, '#14141a');
+    } else {
+      grad.addColorStop(0, 'rgba(255,255,255,.9)');
+      grad.addColorStop(.35, hexA(base, .55));
+      grad.addColorStop(.9, hexA(base, .35));
+      grad.addColorStop(1, hexA(base, .85));
+    }
+    ctx.fillStyle = grad;
+    ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+    ctx.shadowBlur = 0;
+    ctx.strokeStyle = b.kind === 'bomb' ? '#ff5a3d' : hexA(base, .9); ctx.lineWidth = 2; ctx.stroke();
+
+    // shine
+    ctx.fillStyle = 'rgba(255,255,255,.75)';
+    ctx.beginPath(); ctx.ellipse(x - r * .38, y - r * .42, r * .22, r * .12, -.6, 0, Math.PI * 2); ctx.fill();
+
+    if (b.kind !== 'normal') {
+      ctx.font = `${Math.round(r * .9)}px system-ui, "Apple Color Emoji", "Segoe UI Emoji", sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText(b.kind === 'bomb' ? '💣' : b.kind === 'heart' ? '❤️' : '⭐', x, y + r * .05);
+    }
+  }
+
+  function easeOut(t) { return 1 - (1 - t) ** 3; }
+  function hexA(hex, a) {
+    const n = parseInt(hex.slice(1), 16);
+    return `rgba(${n >> 16},${(n >> 8) & 255},${n & 255},${a})`;
+  }
+
+  // ---------- flow ----------
+  const startEl = $('start'), overEl = $('over');
+  function showBest() {
+    $('bestStart').textContent = best ? `Best: ${best}` : '';
+  }
+  function begin() {
+    initAudio(); if (actx && actx.state === 'suspended') actx.resume().catch(() => {});
+    reset(); startEl.classList.add('hidden'); overEl.classList.add('hidden'); running = true;
+  }
+  function end(reason) {
+    running = false;
+    const isBest = score > best;
+    if (isBest) { best = score; store.set('bubblepop-best', String(best)); }
+    $('overReason').textContent = reason;
+    $('final').textContent = score;
+    $('bestOver').textContent = isBest && score > 0 ? '🏆 New best score!' : `Best: ${best}`;
+    $('stats').textContent = `${popped} popped · best combo x${maxCombo}`;
+    setTimeout(() => overEl.classList.remove('hidden'), 450);
+    updateHud();
+  }
+  $('play').addEventListener('click', begin);
+  $('again').addEventListener('click', begin);
+
+  reset(); showBest();
+  // idle bubbles behind the start screen
+  for (let i = 0; i < 8; i++) { spawn(); bubbles[i].y = rand(H * .2, H); }
+  (function idle() {
+    if (!running) {
+      for (const b of bubbles) { b.y -= b.vy * .3 * .016; b.wob += b.wobSpd * .016; b.born = 1; if (b.y < -b.r) { b.y = H + b.r; } }
+      requestAnimationFrame(idle);
+    }
+  })();
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
