@@ -3,95 +3,180 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Noumann's Project Lab</title>
+<title>Nouman Syed Naseer · Software Architect</title>
+<meta name="description" content="Nouman Syed Naseer is a Software Architect in Austin, TX building distributed systems, cloud-native platforms and agentic AI. Explore his work and the Playground of apps built by AI agents.">
+<meta property="og:title" content="Nouman Syed Naseer · Software Architect">
+<meta property="og:description" content="Distributed systems, cloud-native platforms and agentic AI. Plus a Playground of apps built by AI agents.">
+<meta name="theme-color" content="#0b0c0f">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23d4ff3a'/%3E%3Ctext x='16' y='22' font-family='Arial' font-weight='700' font-size='17' text-anchor='middle' fill='%2311140a'%3EN%3C/text%3E%3C/svg%3E">
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"}}</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --bg:#0b0c0f; --panel:#13151a; --panel2:#1a1d24; --line:#262a33; --ink:#eceef2; --mute:#8c93a1;
+    --bg:#0b0c0f; --panel:#13151a; --panel2:#1a1d24; --line:#262a33; --line2:#3a3f4a; --ink:#eceef2; --mute:#8c93a1; --soft:#c3c8d2;
     --acc:#d4ff3a; --acc-ink:#11140a; --r:14px;
     --display:'Space Grotesk',system-ui,sans-serif; --body:'Inter',system-ui,sans-serif; --mono:'JetBrains Mono',ui-monospace,monospace;
   }
   *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
   html,body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:15px;line-height:1.55;-webkit-font-smoothing:antialiased}
   a{color:inherit}
   button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
   .wrap{max-width:1180px;margin:0 auto;padding:0 22px}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
+
+  /* views */
+  .view{display:none}
+  body.v-home #home, body.v-playground #playground, body.v-detail #detail{display:block}
 
   /* top bar */
   header.top{position:sticky;top:0;z-index:20;background:rgba(11,12,15,.82);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--line)}
   header.top .wrap{display:flex;align-items:center;justify-content:space-between;height:60px;gap:16px}
-  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;text-decoration:none}
-  .brand i{width:22px;height:22px;border-radius:6px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-style:normal;font-size:13px}
-  .top nav{display:flex;gap:4px;font-size:14px}
+  .brand{display:flex;align-items:center;gap:10px;font-family:var(--display);font-weight:700;font-size:17px;letter-spacing:-.01em;text-decoration:none;white-space:nowrap}
+  .brand i{width:24px;height:24px;border-radius:7px;background:var(--acc);display:grid;place-items:center;color:var(--acc-ink);font-style:normal;font-size:13px}
+  .top nav{display:flex;gap:2px;font-size:14px;align-items:center}
   .top nav a{text-decoration:none;color:var(--mute);padding:6px 10px;border-radius:8px}
   .top nav a:hover{color:var(--ink);background:var(--panel)}
+  .top nav a.on{color:var(--ink)}
+  .top nav a.pg{color:var(--acc-ink);background:var(--acc);font-weight:600;margin-left:6px}
+  .top nav a.pg:hover{background:#e2ff74;color:var(--acc-ink)}
 
-  /* hero */
-  .hero{padding:64px 0 34px}
-  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--acc)}
-  .hero h1{font-family:var(--display);font-weight:700;font-size:clamp(38px,6.4vw,76px);line-height:1;letter-spacing:-.035em;margin:14px 0 18px;max-width:14ch}
-  .hero p{color:var(--mute);font-size:17px;max-width:58ch}
-  .stats{display:flex;gap:34px;margin-top:30px;flex-wrap:wrap}
-  .stats div{font-family:var(--mono);font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
-  .stats b{display:block;font-family:var(--display);font-size:30px;color:var(--ink);letter-spacing:-.02em;text-transform:none}
+  /* buttons */
+  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none;border:1px solid var(--line);background:var(--panel)}
+  .btn:hover{border-color:var(--line2)}
+  .btn.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
+  .btn.primary:hover{background:#e2ff74}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
 
-  /* controls */
-  .bar{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 0;border-top:1px solid var(--line);margin-top:10px}
+  /* ---------- portfolio ---------- */
+  .hero{position:relative;padding:84px 0 64px;overflow:hidden}
+  .hero:before{content:'';position:absolute;inset:0;background-image:linear-gradient(var(--line) 1px,transparent 1px),linear-gradient(90deg,var(--line) 1px,transparent 1px);background-size:56px 56px;opacity:.35;mask-image:radial-gradient(ellipse 70% 70% at 30% 30%,#000 20%,transparent 75%);-webkit-mask-image:radial-gradient(ellipse 70% 70% at 30% 30%,#000 20%,transparent 75%);pointer-events:none}
+  .hero:after{content:'';position:absolute;width:520px;height:520px;right:-120px;top:-160px;background:radial-gradient(circle,rgba(212,255,58,.14),transparent 65%);pointer-events:none}
+  .hero .wrap{position:relative}
+  .hero .hgrid{display:block}
+  .avail{display:inline-flex;align-items:center;gap:8px;font-family:var(--mono);font-size:12px;color:var(--soft);border:1px solid var(--line);background:var(--panel);padding:5px 11px;border-radius:999px}
+  .avail i{width:7px;height:7px;border-radius:50%;background:var(--acc);box-shadow:0 0 0 4px rgba(212,255,58,.15)}
+  .hero h1{font-family:var(--display);font-weight:700;font-size:clamp(40px,6vw,74px);line-height:1;letter-spacing:-.035em;margin:20px 0 20px}
+  .hero h1 em{font-style:normal;color:var(--acc)}
+  .hero .lead{color:var(--soft);font-size:18px;max-width:54ch}
+  .hero .actions{margin-top:30px}
+  .now{background:linear-gradient(180deg,var(--panel),#101216);border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:0 30px 80px rgba(0,0,0,.45)}
+  .now .bar{display:flex;align-items:center;gap:6px;padding:12px 14px;border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--mute)}
+  .now .bar span{width:10px;height:10px;border-radius:50%;background:var(--line2)}
+  .now .bar b{margin-left:8px;font-weight:400}
+  .now dl{padding:18px 20px 20px;display:grid;gap:14px;font-size:14px}
+  .now dt{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+  .now dd{color:var(--ink);margin-top:2px}
+  .now dd a{color:var(--acc);text-decoration:none}
+  .now dd a:hover{text-decoration:underline}
+
+  .stats{display:grid;grid-template-columns:repeat(4,1fr);border:1px solid var(--line);border-radius:var(--r);background:var(--panel);margin-top:56px}
+  .stats div{padding:20px 22px;border-left:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+  .stats div:first-child{border-left:0}
+  .stats b{display:block;font-family:var(--display);font-size:32px;color:var(--ink);letter-spacing:-.02em;text-transform:none;line-height:1.1;margin-bottom:4px}
+
+  .section{border-top:1px solid var(--line);padding:76px 0;scroll-margin-top:60px}
+  .shead{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin-bottom:30px}
+  .shead h2{font-family:var(--display);font-size:clamp(28px,3.6vw,40px);letter-spacing:-.025em;line-height:1.05;margin-top:10px}
+  .shead p{color:var(--soft);font-size:16.5px;max-width:62ch;align-self:end}
+  .split{display:grid;grid-template-columns:260px minmax(0,1fr);gap:40px}
+
+  .focus{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+  .fcard{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:22px;transition:border-color .2s}
+  .fcard:hover{border-color:var(--line2)}
+  .fcard .ic{width:38px;height:38px;border-radius:10px;background:var(--panel2);border:1px solid var(--line);display:grid;place-items:center;color:var(--acc);margin-bottom:16px}
+  .fcard h3{font-family:var(--display);font-size:19px;letter-spacing:-.01em;margin-bottom:6px}
+  .fcard p{color:var(--mute);font-size:14.5px}
+
+  .timeline{display:flex;flex-direction:column}
+  .job{display:grid;grid-template-columns:180px minmax(0,1fr);gap:28px;padding:26px 0;border-top:1px solid var(--line)}
+  .job:first-child{border-top:0;padding-top:0}
+  .job .when{font-family:var(--mono);font-size:12.5px;color:var(--mute);padding-top:4px}
+  .job .when b{display:block;color:var(--acc);font-weight:600;margin-bottom:4px}
+  .job h3{font-family:var(--display);font-size:21px;letter-spacing:-.015em}
+  .job h3 span{color:var(--mute);font-weight:500}
+  .job ul{list-style:none;margin-top:12px;display:flex;flex-direction:column;gap:8px}
+  .job li{color:var(--soft);padding-left:18px;position:relative;font-size:14.5px}
+  .job li:before{content:'';position:absolute;left:0;top:10px;width:7px;height:1.5px;background:var(--acc)}
+  .job .tags{margin-top:14px}
+
+  .skills{display:grid;grid-template-columns:repeat(2,1fr);gap:16px}
+  .sk{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:20px 22px}
+  .sk h4{font-family:var(--mono);font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute);margin-bottom:12px;font-weight:600}
+  .sk .tags{padding:0;margin:0}
+  .sk .tag{font-size:12.5px;padding:4px 10px;border-radius:7px;color:var(--ink);background:var(--panel2)}
+  .sk.ai{border-color:rgba(212,255,58,.3);background:linear-gradient(180deg,rgba(212,255,58,.05),var(--panel))}
+  .edu{margin-top:16px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px 22px}
+  .edu b{font-family:var(--display);font-size:17px}
+  .edu span{color:var(--mute);font-size:14px}
+
+  .pgcta{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:20px;align-items:end;margin-bottom:26px}
+  .contact{background:var(--panel);border:1px solid var(--line);border-radius:20px;padding:46px;position:relative;overflow:hidden}
+  .contact:after{content:'';position:absolute;width:420px;height:420px;right:-140px;bottom:-200px;background:radial-gradient(circle,rgba(212,255,58,.16),transparent 65%);pointer-events:none}
+  .contact h2{font-family:var(--display);font-size:clamp(30px,4.4vw,50px);letter-spacing:-.03em;line-height:1.02;max-width:18ch;margin:12px 0 14px}
+  .contact p{color:var(--soft);max-width:56ch;font-size:16px}
+  .contact .actions{margin-top:26px;position:relative;z-index:1}
+
+  /* ---------- playground ---------- */
+  .pghero{padding-top:64px;padding-bottom:30px}
+  .pghero h1{font-family:var(--display);font-weight:700;font-size:clamp(38px,6vw,70px);line-height:1;letter-spacing:-.035em;margin:14px 0 18px;max-width:16ch}
+  .pghero p{color:var(--mute);font-size:17px;max-width:62ch}
+  .pstats{display:flex;gap:34px;margin-top:30px;flex-wrap:wrap}
+  .pstats div{font-family:var(--mono);font-size:12px;color:var(--mute);text-transform:uppercase;letter-spacing:.08em}
+  .pstats b{display:block;font-family:var(--display);font-size:30px;color:var(--ink);letter-spacing:-.02em;text-transform:none}
+  .filters{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;padding:18px 0;border-top:1px solid var(--line);margin-top:10px}
+  .fgroup{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+  .flabel{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
   .chips{display:flex;gap:6px;flex-wrap:wrap}
   .chip{padding:7px 14px;border-radius:999px;border:1px solid var(--line);font-size:13.5px;color:var(--mute);transition:.15s}
-  .chip:hover{color:var(--ink);border-color:#3a3f4a}
+  .chip:hover{color:var(--ink);border-color:var(--line2)}
   .chip.on{background:var(--ink);color:var(--bg);border-color:var(--ink)}
   .search{position:relative}
   .search input{background:var(--panel);border:1px solid var(--line);border-radius:999px;color:var(--ink);font:inherit;font-size:14px;padding:8px 14px 8px 34px;width:230px;outline:none}
   .search input:focus{border-color:var(--acc)}
   .search svg{position:absolute;left:12px;top:50%;transform:translateY(-50%);opacity:.5}
 
-  /* grid */
   .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:18px;padding:8px 0 70px}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-decoration:none;display:flex;flex-direction:column;transition:transform .2s,border-color .2s}
-  .card:hover{transform:translateY(-3px);border-color:#3a3f4a}
+  .grid.three{grid-template-columns:repeat(2,1fr);padding:0}
+  .tile{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);overflow:hidden;text-decoration:none;display:flex;flex-direction:column;transition:transform .2s,border-color .2s}
+  .tile:hover{transform:translateY(-3px);border-color:var(--line2)}
   .thumb{aspect-ratio:16/10;position:relative;overflow:hidden;background:var(--panel2)}
   .thumb img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .5s}
-  .card:hover .thumb img{transform:scale(1.04)}
+  .tile:hover .thumb img{transform:scale(1.04)}
   .thumb .badge{position:absolute;left:12px;top:12px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;padding:4px 8px;border-radius:6px;background:rgba(0,0,0,.6);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
   .thumb .live{position:absolute;right:12px;top:12px;font-family:var(--mono);font-size:11px;padding:4px 8px;border-radius:6px;background:var(--acc);color:var(--acc-ink);font-weight:600}
-  .card .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;flex:1}
-  .card h3{font-family:var(--display);font-size:20px;letter-spacing:-.015em}
-  .card p{color:var(--mute);font-size:14px}
+  .tile .body{padding:16px 18px 18px;display:flex;flex-direction:column;gap:8px;flex:1}
+  .tile h3{font-family:var(--display);font-size:20px;letter-spacing:-.015em}
+  .tile p{color:var(--mute);font-size:14px}
+  .by{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:11.5px;color:var(--soft)}
+  .by i{width:6px;height:6px;border-radius:50%;background:var(--acc)}
   .tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:auto;padding-top:6px}
   .tag{font-family:var(--mono);font-size:11px;color:#b6bcc8;border:1px solid var(--line);padding:2px 7px;border-radius:5px}
   .empty{color:var(--mute);padding:40px 0;grid-column:1/-1}
-
-  /* art thumbs for non-game projects */
   .art{width:100%;height:100%;display:grid;place-items:center;font-family:var(--display);font-weight:700;letter-spacing:-.03em}
 
-  /* about / add */
-  .section{border-top:1px solid var(--line);padding:56px 0}
-  .section h2{font-family:var(--display);font-size:30px;letter-spacing:-.02em;margin-bottom:12px}
-  .section p{color:var(--mute);max-width:62ch}
   .steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px;margin-top:24px}
   .step{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:18px}
   .step b{font-family:var(--mono);color:var(--acc);font-size:12px}
   .step h4{font-family:var(--display);font-size:17px;margin:6px 0 4px}
-  .step p{font-size:14px}
-  .prompt{margin-top:22px;background:var(--panel2);border:1px dashed #3a3f4a;border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:13px;color:#cfd4dc;display:flex;justify-content:space-between;gap:12px;align-items:center}
+  .step p{font-size:14px;color:var(--mute)}
+  .add h2{font-family:var(--display);font-size:30px;letter-spacing:-.02em;margin:10px 0 12px}
+  .add > .wrap > p{color:var(--mute);max-width:62ch}
+  .prompt{margin-top:22px;background:var(--panel2);border:1px dashed var(--line2);border-radius:10px;padding:14px 16px;font-family:var(--mono);font-size:13px;color:#cfd4dc;display:flex;justify-content:space-between;gap:12px;align-items:center}
   .copy{font-family:var(--body);font-size:13px;background:var(--ink);color:var(--bg);padding:6px 12px;border-radius:8px;flex-shrink:0}
-  footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute);font-size:13px}
 
-  /* detail view */
-  #detail{display:none}
-  body.detail #home{display:none}
-  body.detail #detail{display:block}
+  footer{border-top:1px solid var(--line);padding:26px 0 40px;color:var(--mute);font-size:13px}
+  footer .wrap{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap}
+  footer a{color:var(--soft);text-decoration:none;margin-left:16px}
+  footer a:hover{color:var(--ink)}
+
+  /* ---------- detail ---------- */
   .back{display:inline-flex;align-items:center;gap:6px;color:var(--mute);font-size:14px;margin:26px 0 18px;text-decoration:none}
   .back:hover{color:var(--ink)}
   .dhead{display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap;padding-bottom:22px}
   .dhead h1{font-family:var(--display);font-size:clamp(34px,5vw,56px);letter-spacing:-.03em;line-height:1.02;margin-top:8px}
   .dhead .tagline{color:var(--mute);font-size:17px;margin-top:8px;max-width:60ch}
-  .actions{display:flex;gap:8px;flex-wrap:wrap}
-  .btn{display:inline-flex;align-items:center;gap:8px;padding:10px 16px;border-radius:10px;font-weight:600;font-size:14px;text-decoration:none;border:1px solid var(--line);background:var(--panel)}
-  .btn:hover{border-color:#3a3f4a}
-  .btn.primary{background:var(--acc);color:var(--acc-ink);border-color:var(--acc)}
   .tabs{display:flex;gap:2px;border-bottom:1px solid var(--line);margin-bottom:24px}
   .tab{padding:12px 16px;font-size:14.5px;color:var(--mute);border-bottom:2px solid transparent;margin-bottom:-1px}
   .tab.on{color:var(--ink);border-bottom-color:var(--acc)}
@@ -104,14 +189,13 @@
   .stagebar .actions .btn{padding:7px 12px;font-size:13px}
   .ext{background:var(--panel);border:1px solid var(--line);border-radius:var(--r);padding:40px 28px;text-align:center}
   .ext p{color:var(--mute);max-width:52ch;margin:10px auto 22px}
-
   .docs{display:grid;grid-template-columns:200px minmax(0,1fr);gap:40px;padding-bottom:80px}
   .toc{position:sticky;top:84px;align-self:start;display:flex;flex-direction:column;gap:2px;font-size:13.5px}
   .toc a{color:var(--mute);text-decoration:none;padding:5px 10px;border-left:2px solid var(--line)}
   .toc a:hover{color:var(--ink);border-left-color:var(--acc)}
   .doc h2{font-family:var(--display);font-size:22px;letter-spacing:-.01em;margin:34px 0 10px;scroll-margin-top:84px}
   .doc h2:first-child{margin-top:0}
-  .doc p,.doc li{color:#c3c8d2}
+  .doc p,.doc li{color:var(--soft)}
   .doc ul{padding-left:20px;display:flex;flex-direction:column;gap:5px}
   .tw{overflow-x:auto;-webkit-overflow-scrolling:touch}
   .doc table{width:100%;border-collapse:collapse;font-size:14px;margin-top:6px}
@@ -125,44 +209,237 @@
   .meta b{font-weight:600;font-size:14.5px}
   .note{background:rgba(212,255,58,.07);border:1px solid rgba(212,255,58,.25);border-radius:10px;padding:12px 14px;color:#dfe8b8;font-size:14px;margin-top:12px}
 
+
+  /* ---------- 3D desk stage ---------- */
+  :root{--stageW:min(500px,40vw);--stageR:max(22px,calc((100vw - 1180px) / 2 + 22px))}
+  #desk3d{display:none}
+  body.has3d.v-home #desk3d{display:block;position:fixed;z-index:5;top:80px;bottom:22px;right:var(--stageR);width:var(--stageW);border-radius:24px;border:1px solid var(--line);overflow:hidden;background:radial-gradient(120% 80% at 70% 0%,#1d2230,#0e1014 70%);box-shadow:0 30px 80px rgba(0,0,0,.45);opacity:0;transition:opacity .6s}
+  body.has3d.scene-ready.v-home #desk3d{opacity:1}
+  #stageCanvas{width:100%;height:100%;display:block;cursor:default}
+  #desk3d[data-scene="hero"] #stageCanvas,#desk3d[data-scene="featured"] #stageCanvas{cursor:pointer}
+  #bubble{position:absolute;left:18px;right:18px;top:18px;width:max-content;max-width:calc(100% - 36px);background:var(--ink);color:var(--bg);font-weight:600;font-size:14.5px;line-height:1.35;padding:10px 14px;border-radius:14px 14px 14px 4px;box-shadow:0 10px 30px rgba(0,0,0,.35);opacity:0;transform:translateY(-6px) scale(.97);transition:opacity .25s,transform .25s;pointer-events:none}
+  #bubble.show{opacity:1;transform:none}
+  #desk3d .stagetag{position:absolute;left:16px;bottom:14px;font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+  @media (min-width:1101px){
+    body.has3d #home .wrap{padding-right:calc(var(--stageW) + 62px)}
+    body.has3d .hero:after{right:calc(var(--stageW) + 40px)}
+  }
+  @media (max-width:1100px){
+    body.has3d.v-home #desk3d{top:auto;bottom:12px;right:12px;width:112px;height:128px;border-radius:18px}
+    #bubble{position:fixed;left:auto;right:132px;top:auto;bottom:40px;max-width:min(220px,calc(100vw - 160px));font-size:13px;border-radius:14px 14px 4px 14px}
+    #desk3d .stagetag{display:none}
+  }
+  @media (prefers-reduced-motion:reduce){#bubble{transition:none}}
+  @media (max-width:960px){
+    .hero .hgrid{grid-template-columns:minmax(0,1fr)}
+    .shead,.split{grid-template-columns:minmax(0,1fr);gap:14px}
+    .focus{grid-template-columns:minmax(0,1fr)}
+    .grid.three .tile:nth-child(n+3){display:none}
+  }
   @media (max-width:760px){
+    .top nav a.hide-sm{display:none}
+    .hero{padding:52px 0 44px}
+    .stats{grid-template-columns:repeat(2,1fr)}
+    .stats div:nth-child(3){border-left:0}
+    .stats div:nth-child(n+3){border-top:1px solid var(--line)}
+    .job{grid-template-columns:minmax(0,1fr);gap:8px}
+    .skills{grid-template-columns:minmax(0,1fr)}
+    .pgcta{grid-template-columns:minmax(0,1fr)}
+    .grid.three{grid-template-columns:minmax(0,1fr)}
+    .contact{padding:30px 22px}
+    .section{padding:56px 0}
     .docs{grid-template-columns:minmax(0,1fr)}
     .doc td:first-child{white-space:normal}
     .doc th,.doc td{padding:8px 8px}
     .toc{display:none}
-    .top nav a.hide-sm{display:none}
     .search input{width:100%}
-    .search{flex:1}
+    .search{flex:1;min-width:200px}
     .stage{aspect-ratio:3/4}
+    footer a{margin:0 16px 0 0}
   }
+  @media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important}}
   :focus-visible{outline:2px solid var(--acc);outline-offset:2px}
 </style>
 </head>
-<body>
+<body class="v-home">
 
 <header class="top">
   <div class="wrap">
-    <a class="brand" href="#" data-home><i>N</i>Project Lab</a>
-    <nav>
-      <a href="#" data-home>Projects</a>
-      <a href="#add-project" class="hide-sm" data-scroll="add">Add a project</a>
+    <a class="brand" href="#" data-nav="home"><i>N</i>Nouman Naseer</a>
+    <nav id="nav">
+      <a href="#about" class="hide-sm" data-nav="about">About</a>
+      <a href="#experience" class="hide-sm" data-nav="experience">Experience</a>
+      <a href="#skills" class="hide-sm" data-nav="skills">Skills</a>
+      <a href="#contact" data-nav="contact">Contact</a>
+      <a href="#playground" class="pg" data-nav="playground">Playground</a>
     </nav>
   </div>
 </header>
 
 <main>
-  <!-- HOME -->
-  <div id="home">
-    <section class="wrap hero">
-      <div class="eyebrow">Noumann Syed · Portfolio</div>
-      <h1>Things I've built, ready to play.</h1>
-      <p>Every project here runs right in your browser. Open one to try it live, then read the docs for controls, rules and how it was made.</p>
-      <div class="stats" id="stats"></div>
+  <!-- ================= PORTFOLIO ================= -->
+  <div id="home" class="view">
+    <div id="desk3d" aria-label="Animated 3D illustration of Nouman at his desk" role="img">
+      <canvas id="stageCanvas"></canvas>
+      <div id="bubble" aria-live="polite"></div>
+      <div class="stagetag">Scroll to see my day →</div>
+    </div>
+    <section class="hero" data-scene="hero">
+      <div class="wrap hgrid">
+        <div>
+          <span class="avail"><i></i>Software Architect · Austin, TX</span>
+          <h1>I design systems that scale, and build with <em>AI agents</em>.</h1>
+          <p class="lead">I'm Nouman Syed Naseer, a software architect with 8+ years building distributed systems, cloud-native platforms and high-availability services. Today I'm focused on putting generative AI, LLMs and multi-agent systems to work on real problems.</p>
+          <div class="actions">
+            <a class="btn primary" href="#experience" data-nav="experience">View my work</a>
+            <a class="btn" href="#playground" data-nav="playground">Explore the Playground →</a>
+          </div>
+        </div>
+      </div>
+      <div class="wrap">
+        <div class="stats">
+          <div><b data-count="8" data-suffix="+">8+</b>Years engineering</div>
+          <div><b data-count="99.9" data-suffix="%" data-dec="1">99.9%</b>Platform uptime</div>
+          <div><b data-count="1" data-suffix="M+">1M+</b>Events / day</div>
+          <div><b id="statBuilds">0</b>Agent builds</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="about" data-scene="about">
+      <div class="wrap">
+        <div class="shead">
+          <div><div class="eyebrow">01 · About</div><h2>What I do</h2></div>
+          <p>I've spent my career moving teams from monoliths to microservices, making platforms faster and more reliable, and building the automation around them. Lately I've been pairing that with AI: chatbots that speed up operations, and agents that can build whole apps on their own.</p>
+        </div>
+        <div class="focus">
+          <div class="fcard">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M17.5 14v7M14 17.5h7"/></svg></div>
+            <h3>Distributed systems</h3>
+            <p>Microservices, event-driven and domain-driven architecture, built for high availability and clear ownership.</p>
+          </div>
+          <div class="fcard">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 18a4.5 4.5 0 0 1-.5-8.97A6 6 0 0 1 18 8a4 4 0 0 1 0 10z"/></svg></div>
+            <h3>Cloud-native platforms</h3>
+            <p>Automation platforms on IBM Cloud and AWS, with CI/CD, caching, monitoring and disaster-recovery planning built in.</p>
+          </div>
+          <div class="fcard">
+            <div class="ic"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v3M12 18v3M3 12h3M18 12h3"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 2.1 2.1M16.3 16.3l2.1 2.1M5.6 18.4l2.1-2.1M16.3 7.7l2.1-2.1"/></svg></div>
+            <h3>Agentic AI</h3>
+            <p>LLM apps, RAG and multi-agent systems with LangChain, LangGraph, CrewAI and AutoGen, connected through MCP and A2A.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="experience">
+      <div class="wrap">
+        <div class="shead">
+          <div><div class="eyebrow">02 · Experience</div><h2>Where I've worked</h2></div>
+          <p>From backend developer to software architect, working across healthcare, enterprise cloud and AI.</p>
+        </div>
+        <div class="timeline">
+          <article class="job" data-scene="ibm">
+            <div class="when"><b>Now</b>Jun 2022 – Present</div>
+            <div>
+              <h3>Software Architect <span>· IBM</span></h3>
+              <ul>
+                <li>Architected a cloud automation platform with 99.9% uptime on Cloudant, Event Streams, MQ and Code Engine.</li>
+                <li>Built a GenAI operations chatbot with IBM Granite and LangChain that streamlined workflows and customer case handling.</li>
+                <li>Created a FastAPI Slack bot for incident management that cut response times by 40%.</li>
+                <li>Brought API latency from 800 ms to 150 ms with Redis caching, and made deployments 60% faster by moving legacy services to microservices.</li>
+                <li>Set up CI/CD with automated testing and designed the disaster-recovery strategy (RPO 15 min, RTO 1 hr).</li>
+              </ul>
+              <div class="tags"><span class="tag">IBM Cloud</span><span class="tag">GenAI</span><span class="tag">LangChain</span><span class="tag">FastAPI</span><span class="tag">Redis</span></div>
+            </div>
+          </article>
+          <article class="job" data-scene="optum">
+            <div class="when">Jun 2020 – Jun 2022</div>
+            <div>
+              <h3>Software Development Engineer <span>· Optum</span></h3>
+              <ul>
+                <li>Architected a Java microservices platform handling 50K+ daily transactions at 99.95% availability, with a React/TypeScript front end for 10K+ concurrent users.</li>
+                <li>Designed event-driven systems on Kafka processing 1M+ events a day in real time.</li>
+                <li>Brought key database queries from 2.3 s to 400 ms with pooling and indexing.</li>
+                <li>Set up monitoring and alerting that made issue resolution 38% faster.</li>
+              </ul>
+              <div class="tags"><span class="tag">Java</span><span class="tag">Spring Boot</span><span class="tag">Kafka</span><span class="tag">React</span><span class="tag">TypeScript</span></div>
+            </div>
+          </article>
+          <article class="job" data-scene="techlogix">
+            <div class="when">Dec 2017 – Dec 2020</div>
+            <div>
+              <h3>Backend Developer <span>· Techlogix</span></h3>
+              <ul>
+                <li>Moved a monolith to Java/Spring Boot microservices, cutting report generation time by 30%.</li>
+                <li>Built a React reporting dashboard with real-time charts that halved manual effort.</li>
+                <li>Delivered OAuth 2.0 REST integrations with 5 external systems, and raised test coverage from 65% to 92%.</li>
+              </ul>
+              <div class="tags"><span class="tag">Spring Boot</span><span class="tag">ActiveMQ</span><span class="tag">OAuth 2.0</span></div>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="skills" data-scene="skills">
+      <div class="wrap">
+        <div class="shead">
+          <div><div class="eyebrow">03 · Skills</div><h2>Toolbox</h2></div>
+          <p>The languages, platforms and patterns I reach for most.</p>
+        </div>
+        <div class="skills" id="skillGrid"></div>
+        <div class="edu">
+          <div><div class="eyebrow" style="margin-bottom:6px">Education</div><b>B.S. Computer Science</b></div>
+          <span>National University of Computer and Emerging Sciences (FAST-NU), Lahore · 2013 – 2017</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="featured" data-scene="featured">
+      <div class="wrap">
+        <div class="pgcta">
+          <div class="shead" style="margin:0">
+            <div><div class="eyebrow">04 · Playground</div><h2>Built by AI agents</h2></div>
+            <p>Games, apps and designs that AI agents built from my prompts. Most of them run right here in the browser.</p>
+          </div>
+          <a class="btn" href="#playground" data-nav="playground">See all <span id="allCount"></span> →</a>
+        </div>
+        <div class="grid three" id="featGrid"></div>
+      </div>
+    </section>
+
+    <section class="section" id="contact" data-scene="contact">
+      <div class="wrap">
+        <div class="contact">
+          <div class="eyebrow">05 · Contact</div>
+          <h2>Let's build something reliable, and a little intelligent.</h2>
+          <p>Open to conversations about architecture, platform engineering and applied AI. The quickest way to reach me is email or LinkedIn.</p>
+          <div class="actions">
+            <a class="btn primary" href="mailto:noumannsyed@gmail.com">Email me</a>
+            <a class="btn" href="https://www.linkedin.com/in/noumannaseer" target="_blank" rel="noopener">LinkedIn ↗</a>
+            <a class="btn" href="https://github.com/nomy950" target="_blank" rel="noopener">GitHub ↗</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= PLAYGROUND ================= -->
+  <div id="playground" class="view">
+    <section class="wrap pghero">
+      <div class="eyebrow">Playground</div>
+      <h1>Apps built by AI agents.</h1>
+      <p>A lab of games, apps, docs and designs that AI agents built end-to-end. Open one to try it live, then read the docs for controls, rules and how it was made. Each card shows which agent built it.</p>
+      <div class="pstats" id="pstats"></div>
     </section>
 
     <div class="wrap">
-      <div class="bar">
-        <div class="chips" id="chips"></div>
+      <div class="filters">
+        <div class="fgroup">
+          <div class="chips" id="chips"></div>
+          <div class="chips" id="agents"></div>
+        </div>
         <label class="search">
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
           <input id="q" type="search" placeholder="Search projects" aria-label="Search projects">
@@ -171,67 +448,91 @@
       <div class="grid" id="grid"></div>
     </div>
 
-    <section class="section" id="add">
+    <section class="section add" id="add">
       <div class="wrap">
-        <div class="eyebrow">Growing the lab</div>
-        <h2>Adding a new project</h2>
-        <p>Each project lives inside this site as its own page, with a card, a live "Try it" view and its own documentation. New projects get added the same way the first ones did.</p>
+        <div class="eyebrow">Growing the playground</div>
+        <h2>How projects get here</h2>
+        <p>Each project lives inside this site as its own page, with a card, a live "Try it" view and its own documentation. Any AI agent can be the builder.</p>
         <div class="steps">
-          <div class="step"><b>01</b><h4>Build it with Claude</h4><p>Make a game, tool or app in any chat. Anything that runs as a web page works best.</p></div>
-          <div class="step"><b>02</b><h4>Ask to add it here</h4><p>Say which project to add. Claude copies it into the lab, takes a screenshot and writes the docs.</p></div>
-          <div class="step"><b>03</b><h4>It shows up live</h4><p>You get a preview link first. Once you approve it, the change goes live on nouman.ai.</p></div>
+          <div class="step"><b>01</b><h4>An agent builds it</h4><p>A game, tool or app made by an AI agent such as Claude. Anything that runs as a web page works best.</p></div>
+          <div class="step"><b>02</b><h4>It's added here</h4><p>The project is copied into the Playground, screenshotted, documented and tagged with the agent that built it.</p></div>
+          <div class="step"><b>03</b><h4>Reviewed, then live</h4><p>Every change gets a preview link first. Once approved, it goes live on nouman.ai.</p></div>
         </div>
-        <div class="prompt"><span id="promptText">Add my latest project to my Project Lab, with docs and a Try it view.</span><button class="copy" id="copyBtn">Copy</button></div>
+        <div class="prompt"><span id="promptText">Add my latest project to the Playground on nouman.ai, with docs and a Try it view.</span><button class="copy" id="copyBtn">Copy</button></div>
       </div>
     </section>
   </div>
 
-  <!-- DETAIL -->
-  <div id="detail" class="wrap"></div>
+  <!-- ================= DETAIL ================= -->
+  <div id="detail" class="view wrap"></div>
 </main>
 
-<footer><div class="wrap">Built with Claude · Projects run in a sandboxed frame; best scores are saved in your own browser.</div></footer>
+<footer><div class="wrap">
+  <span>© <span id="yr">2026</span> Nouman Syed Naseer · Playground projects run in a sandboxed frame.</span>
+  <span><a href="#playground" data-nav="playground">Playground</a><a href="https://www.linkedin.com/in/noumannaseer" target="_blank" rel="noopener">LinkedIn</a><a href="mailto:noumannsyed@gmail.com">Email</a></span>
+</div></footer>
 
 <script src="projects.js"></script>
 <script>
 (() => {
-const PROJECTS = window.PROJECTS || [];
-
-const CATS = [['all', 'All'], ['game', 'Games'], ['app', 'Apps'], ['doc', 'Docs'], ['design', 'Design']];
-const CAT_LABEL = { game: 'Game', app: 'App', doc: 'Doc', design: 'Design' };
+const PROJECTS = (window.PROJECTS || []).map(p => ({ agent: 'Claude', ...p }));
+const SKILLS = [
+  ['Languages & frameworks', ['Java', 'Spring Boot', 'Python', 'FastAPI', 'Flask', 'JavaScript', 'TypeScript', 'React', 'SQL', 'GraphQL', 'REST', 'JUnit']],
+  ['Architecture', ['Microservices', 'Event-driven', 'Domain-driven design', 'System design', 'High availability', 'Disaster recovery']],
+  ['Cloud, data & DevOps', ['IBM Cloud', 'AWS', 'Docker', 'Kafka', 'Event Streams', 'MQ', 'ActiveMQ', 'Redis', 'Cloudant', 'CI/CD', 'Git']],
+  ['AI & agents', ['LLMs', 'RAG', 'LangChain', 'LangGraph', 'CrewAI', 'AutoGen', 'Multi-agent systems', 'MCP', 'A2A', 'IBM Granite'], 'ai'],
+];
+const HOME_SECTIONS = ['about', 'experience', 'skills', 'featured', 'contact'];
+const CATS = [['all', 'All'], ['game', 'Games'], ['app', 'Apps'], ['tool', 'Tools'], ['doc', 'Docs'], ['design', 'Design']];
+const CAT_LABEL = { game: 'Game', app: 'App', tool: 'Tool', doc: 'Doc', design: 'Design' };
 const $ = s => document.querySelector(s);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
+const AGENTS = [...new Set(PROJECTS.map(p => p.agent))];
 // Where an external project opens: Claude, or its own site.
 const onClaude = p => /(^|\.)claude\.ai$/.test((() => { try { return new URL(p.external).hostname; } catch { return ''; } })());
 const extLabel = p => onClaude(p) ? 'Open on Claude' : 'Open ' + esc(p.title);
 const extRuns = p => onClaude(p) ? 'On Claude' : 'Its own site';
-let cat = 'all', q = '';
+let cat = 'all', agent = 'all', q = '';
 
-/* ---------- home ---------- */
+/* ---------- portfolio ---------- */
+$('#yr').textContent = new Date().getFullYear();
+$('#statBuilds').textContent = PROJECTS.length;
+$('#allCount').textContent = PROJECTS.length;
+$('#skillGrid').innerHTML = SKILLS.map(([h, list, cls]) => `<div class="sk ${cls || ''}"><h4>${h}</h4><div class="tags">${list.map(s => `<span class="tag">${esc(s)}</span>`).join('')}</div></div>`).join('');
+
+/* ---------- playground ---------- */
 const playable = PROJECTS.filter(p => p.file).length;
-$('#stats').innerHTML = `<div><b>${PROJECTS.length}</b>Projects</div><div><b>${playable}</b>Playable here</div><div><b>${new Set(PROJECTS.map(p => p.cat)).size}</b>Categories</div>`;
+$('#pstats').innerHTML = `<div><b>${PROJECTS.length}</b>Projects</div><div><b>${playable}</b>Playable here</div><div><b>${AGENTS.length}</b>${AGENTS.length === 1 ? 'Agent' : 'Agents'}</div><div><b>${new Set(PROJECTS.map(p => p.cat)).size}</b>Categories</div>`;
 
 function thumbHTML(p) {
   if (p.thumb) return `<img src="${p.thumb}" alt="" loading="lazy">`;
   const a = p.art;
   return `<div class="art" style="background:${a.bg};color:${a.color};font-size:${a.font || 64}px">${esc(a.label)}</div>`;
 }
+function cardHTML(p, cls = 'tile card') {
+  return `<a class="${cls}" href="#${p.id}">
+      <div class="thumb">${thumbHTML(p)}<span class="badge">${CAT_LABEL[p.cat]}</span>${p.file ? '<span class="live">▶ Playable</span>' : ''}</div>
+      <div class="body"><span class="by"><i></i>Built by ${esc(p.agent)}</span><h3>${esc(p.title)}</h3><p>${esc(p.tagline)}</p>
+      <div class="tags">${(p.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div></div>
+    </a>`;
+}
+// Featured on the home page use a different class so the Playground grid stays the canonical list of a.card.
+$('#featGrid').innerHTML = PROJECTS.filter(p => p.file).concat(PROJECTS.filter(p => !p.file)).slice(0, 4).map(p => cardHTML(p, 'tile feat')).join('');
+
 function renderChips() {
   $('#chips').innerHTML = CATS.filter(([k]) => k === 'all' || PROJECTS.some(p => p.cat === k))
     .map(([k, l]) => `<button class="chip ${k === cat ? 'on' : ''}" data-cat="${k}">${l}</button>`).join('');
+  $('#agents').innerHTML = `<span class="flabel" style="align-self:center">Built by</span>` + [['all', 'Any agent'], ...AGENTS.map(a => [a, a])]
+    .map(([k, l]) => `<button class="chip ${k === agent ? 'on' : ''}" data-agent="${esc(k)}">${esc(l)}</button>`).join('');
 }
 function renderGrid() {
   const t = q.trim().toLowerCase();
-  const list = PROJECTS.filter(p => (cat === 'all' || p.cat === cat) &&
-    (!t || [p.title, p.tagline, ...(p.tags || [])].join(' ').toLowerCase().includes(t)));
-  $('#grid').innerHTML = list.length ? list.map(p => `
-    <a class="card" href="#${p.id}">
-      <div class="thumb">${thumbHTML(p)}<span class="badge">${CAT_LABEL[p.cat]}</span>${p.file ? '<span class="live">▶ Playable</span>' : ''}</div>
-      <div class="body"><h3>${esc(p.title)}</h3><p>${esc(p.tagline)}</p>
-      <div class="tags">${(p.tags || []).map(x => `<span class="tag">${esc(x)}</span>`).join('')}</div></div>
-    </a>`).join('') : '<div class="empty">No projects match that search.</div>';
+  const list = PROJECTS.filter(p => (cat === 'all' || p.cat === cat) && (agent === 'all' || p.agent === agent) &&
+    (!t || [p.title, p.tagline, p.agent, ...(p.tags || [])].join(' ').toLowerCase().includes(t)));
+  $('#grid').innerHTML = list.length ? list.map(p => cardHTML(p)).join('') : '<div class="empty">No projects match that filter.</div>';
 }
 $('#chips').addEventListener('click', e => { const b = e.target.closest('[data-cat]'); if (!b) return; cat = b.dataset.cat; renderChips(); renderGrid(); });
+$('#agents').addEventListener('click', e => { const b = e.target.closest('[data-agent]'); if (!b) return; agent = b.dataset.agent; renderChips(); renderGrid(); });
 $('#q').addEventListener('input', e => { q = e.target.value; renderGrid(); });
 $('#copyBtn').addEventListener('click', async () => {
   try { await navigator.clipboard.writeText($('#promptText').textContent); $('#copyBtn').textContent = 'Copied'; }
@@ -245,9 +546,9 @@ function renderDetail(p) {
   const playableHere = !!p.file;
   const tabs = playableHere ? [['try', 'Try it'], ['docs', 'Documentation']] : [['try', 'Open'], ['docs', 'About']];
   $('#detail').innerHTML = `
-    <a class="back" href="#" data-home>← All projects</a>
+    <a class="back" href="#playground">← Playground</a>
     <div class="dhead">
-      <div><div class="eyebrow">${CAT_LABEL[p.cat]}${p.updated ? ' · Updated ' + esc(p.updated) : ''}</div>
+      <div><div class="eyebrow">${CAT_LABEL[p.cat]} · Built by ${esc(p.agent)}${p.updated ? ' · Updated ' + esc(p.updated) : ''}</div>
       <h1>${esc(p.title)}</h1><div class="tagline">${esc(p.tagline)}</div></div>
       <div class="actions">
         ${playableHere ? `<button class="btn primary" data-tab="try">▶ Play now</button>` : `<a class="btn primary" href="${p.external}" target="_blank" rel="noopener">${extLabel(p)} ↗</a>`}
@@ -294,11 +595,11 @@ function renderPane(p) {
     }
     return;
   }
-  // docs
   const sec = [];
   sec.push(['overview', 'Overview', `<p>${esc(p.overview)}</p>
     <div class="meta" style="margin-top:16px">
       <div><span>Type</span><b>${CAT_LABEL[p.cat]}</b></div>
+      <div><span>Built by</span><b>${esc(p.agent)}</b></div>
       ${p.best ? `<div><span>Best on</span><b>${esc(p.best)}</b></div>` : ''}
       <div><span>Updated</span><b>${esc(p.updated || '—')}</b></div>
       <div><span>Runs</span><b>${p.file ? 'In browser, no install' : extRuns(p)}</b></div>
@@ -314,41 +615,67 @@ function renderPane(p) {
     <nav class="toc">${sec.map(([id, t]) => `<a href="#${p.id}" data-jump="d-${id}">${t}</a>`).join('')}</nav>
     <article class="doc">${sec.map(([id, t, h]) => `<h2 id="d-${id}">${t}</h2>${h}`).join('')}</article></div>`;
 }
+
+/* ---------- clicks ---------- */
 document.addEventListener('click', e => {
   const t = e.target.closest('[data-tab]');
-  if (t && document.body.classList.contains('detail')) {
+  if (t && document.body.classList.contains('v-detail')) {
     curTab = t.dataset.tab; const p = PROJECTS.find(x => x.id === location.hash.slice(1));
     if (p) { renderPane(p); $('.tabs').scrollIntoView({ behavior: 'smooth', block: 'start' }); }
     return;
   }
   const j = e.target.closest('[data-jump]');
   if (j) { e.preventDefault(); const el = document.getElementById(j.dataset.jump); if (el) el.scrollIntoView({ behavior: 'smooth' }); return; }
-  const h = e.target.closest('[data-home]');
-  if (h) { e.preventDefault(); if (location.hash) location.hash = ''; else route(); if (h.dataset.scroll) setTimeout(() => $('#' + h.dataset.scroll).scrollIntoView({ behavior: 'smooth' }), 30); else scrollTo(0, 0); }
-  const s = e.target.closest('[data-scroll]');
-  if (s && !h) { e.preventDefault(); }
-});
-document.querySelector('nav a[data-scroll]').addEventListener('click', e => {
-  e.preventDefault();
-  if (location.hash) { location.hash = ''; }
-  setTimeout(() => $('#add').scrollIntoView({ behavior: 'smooth' }), 40);
+  const n = e.target.closest('[data-nav]');
+  if (n) {
+    // Re-clicking the current hash wouldn't fire hashchange, so route manually.
+    const target = n.dataset.nav === 'home' ? '' : '#' + n.dataset.nav;
+    if (location.hash === target || (!target && !location.hash)) { e.preventDefault(); route(); }
+    else if (!target) { e.preventDefault(); history.pushState(null, '', location.pathname); route(); }
+  }
 });
 
-/* ---------- routing (#project-id) ---------- */
+/* ---------- routing ---------- */
+function setView(v) {
+  document.body.classList.remove('v-home', 'v-playground', 'v-detail'); document.body.classList.add('v-' + v);
+  document.querySelectorAll('#nav a').forEach(a => a.classList.toggle('on', v === 'playground' ? a.dataset.nav === 'playground' : false));
+}
 function route() {
   const id = location.hash.slice(1);
   const p = PROJECTS.find(x => x.id === id);
   if (p) {
     curTab = p.file ? 'try' : 'docs';
-    document.body.classList.add('detail'); renderDetail(p); scrollTo(0, 0);
-    document.title = p.title + ' · Project Lab';
+    setView('detail'); renderDetail(p); scrollTo(0, 0);
+    document.title = p.title + ' · Playground · Nouman Naseer';
+  } else if (id === 'playground' || id === 'add') {
+    setView('playground'); $('#detail').innerHTML = '';
+    document.title = 'Playground · Apps built by AI agents · Nouman Naseer';
+    if (id === 'add') setTimeout(() => $('#add').scrollIntoView(), 0); else scrollTo(0, 0);
   } else {
-    document.body.classList.remove('detail'); $('#detail').innerHTML = '';
-    document.title = "Noumann's Project Lab";
+    setView('home'); $('#detail').innerHTML = '';
+    document.title = 'Nouman Syed Naseer · Software Architect';
+    if (HOME_SECTIONS.includes(id)) setTimeout(() => document.getElementById(id).scrollIntoView(), 0); else scrollTo(0, 0);
   }
 }
 addEventListener('hashchange', route);
+addEventListener('popstate', route);
 renderChips(); renderGrid(); route();
+
+/* ---------- count-up stats ---------- */
+const nums = document.querySelectorAll('[data-count]');
+const runCount = el => {
+  const to = +el.dataset.count, dec = +(el.dataset.dec || 0), suf = el.dataset.suffix || '', t0 = performance.now();
+  const step = now => { const k = Math.min(1, (now - t0) / 1200), v = to * (1 - Math.pow(1 - k, 3)); el.textContent = v.toFixed(dec) + suf; if (k < 1) requestAnimationFrame(step); };
+  requestAnimationFrame(step);
+};
+if (!matchMedia('(prefers-reduced-motion: reduce)').matches && 'IntersectionObserver' in window) {
+  const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { runCount(e.target); io.unobserve(e.target); } }), { threshold: 0.6 });
+  nums.forEach(n => io.observe(n));
+}
+
+/* ---------- 3D desk (desktop + capable devices) ---------- */
+const gl = (() => { try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); } catch (e) { return false; } })();
+if (gl) { document.body.classList.add('has3d'); import('./home3d.js').catch(() => document.body.classList.remove('has3d')); }
 })();
 </script>
 </body>

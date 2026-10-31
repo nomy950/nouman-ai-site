@@ -7,7 +7,8 @@ import { SITE, CONFIG, loadProjects, isPlayable } from './lib.mjs';
 const errors = [], warnings = [];
 const err = m => errors.push(m), warn = m => warnings.push(m);
 const CATS = ['game', 'app', 'tool', 'doc', 'design'];
-const RESERVED = ['settings', 'sidebar', 'customize', 'upgrade', 'downloads'];
+// Hash routes used by the portfolio and Playground views can't be project ids.
+const RESERVED = ['settings', 'sidebar', 'customize', 'upgrade', 'downloads', 'playground', 'add', 'about', 'experience', 'skills', 'featured', 'contact', 'home'];
 const NEED_PLAYABLE = ['id', 'title', 'cat', 'tagline', 'file', 'thumb', 'best', 'overview', 'how', 'controls', 'features', 'tech'];
 const NEED_EXTERNAL = ['id', 'title', 'cat', 'tagline', 'external', 'art', 'extNote', 'overview'];
 
@@ -29,6 +30,8 @@ for (const p of projects) {
   if (p.tagline && p.tagline.length > 120) warn(`${who}: tagline is long (${p.tagline.length} chars); cards look best under 120`);
   if (p.controls) for (const r of p.controls) if (!Array.isArray(r) || r.length !== 3) err(`${who}: each controls row needs [action, keyboard, touch]`);
   for (const t of p.tables || []) for (const r of t.rows || []) if (r.length !== t.head.length) err(`${who}: table "${t.title}" row has ${r.length} cells, header has ${t.head.length}`);
+  if (p.agent !== undefined && (typeof p.agent !== 'string' || !p.agent.trim())) err(`${who}: agent must be a non-empty string such as 'Claude'`);
+  if (!p.agent) warn(`${who}: no "agent" set; it will show as built by Claude`);
   if (p.external && !/^https:\/\//.test(p.external)) err(`${who}: external must be an https URL`);
 
   for (const k of ['file', 'thumb']) {
